@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jet-Nemotron: 高效语言模型的革命性突破</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c2c2c;
+            background: linear-gradient(135deg, #f0f2f5 0%, #dde1e7 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #007aff, #5856d6, #af52de, #ff2d92);
+        }
+
+        .card-content {
+            padding: 50px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 便签笔记样式 */
+        .note-section {
+            margin-bottom: 40px;
+        }
+
+        .note-card {
+            background: #fff9e6;
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .note-card:nth-child(even) {
+            background: #f0f8ff;
+            border-color: #87ceeb;
+            box-shadow: 0 4px 12px rgba(135, 206, 235, 0.2);
+            transform: rotate(0.5deg);
+        }
+
+        .note-card:nth-child(3n) {
+            background: #f5fff5;
+            border-color: #90ee90;
+            box-shadow: 0 4px 12px rgba(144, 238, 144, 0.2);
+            transform: rotate(-0.3deg);
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '📝';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 24px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-title::before {
+            content: '•';
+            color: #007aff;
+            font-size: 24px;
+        }
+
+        .note-content {
+            color: #444;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* 图片区域样式 */
+        .image-section {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .image-caption {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+            padding: 0 20px;
+        }
+
+        /* 性能数据网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-note {
+            background: #fff0f5;
+            border: 2px solid #ff69b4;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-note:nth-child(even) {
+            transform: rotate(1deg);
+        }
+
+        .stat-note:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ff1493;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* 技术步骤 */
+        .tech-steps {
+            margin: 40px 0;
+        }
+
+        .step-note {
+            background: #f0fff0;
+            border: 2px solid #32cd32;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+            transform: rotate(0.3deg);
+        }
+
+        .step-note:nth-child(even) {
+            background: #fff8dc;
+            border-color: #daa520;
+            transform: rotate(-0.3deg);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #32cd32;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .step-note:nth-child(even) .step-number {
+            background: #daa520;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #2c2c2c;
+            margin-left: 15px;
+        }
+
+        .step-content {
+            color: #444;
+            line-height: 1.6;
+            margin-left: 15px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-content {
+                padding: 30px 25px;
+            }
+
+            .title {
+                font-size: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .note-card {
+                padding: 20px;
+                transform: rotate(0deg);
+            }
+
+            .note-card:hover {
+                transform: scale(1.02);
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes noteFloat {
+            0% {
+                transform: translateY(0px) rotate(-0.5deg);
+            }
+
+            50% {
+                transform: translateY(-5px) rotate(0.5deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(-0.5deg);
+            }
+        }
+
+        .note-card {
+            animation: noteFloat 6s ease-in-out infinite;
+        }
+
+        .note-card:nth-child(even) {
+            animation-delay: 2s;
+        }
+
+        .note-card:nth-child(3n) {
+            animation-delay: 4s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-card">
+        <div class="card-content">
+            <!-- 标题区域 -->
+            <div class="header-section">
+                <h1 class="title">Jet-Nemotron</h1>
+                <p class="subtitle">高效语言模型的革命性突破</p>
+                <p class="description">
+                    通过创新的PostNAS框架和JetBlock技术，Jet-Nemotron实现了与全注意力模型相当的精度，
+                    同时在生成吞吐量上提升高达<span class="highlight">53.6倍</span>，
+                    在预填充速度上提升<span class="highlight">6.1倍</span>。
+                    这是大语言模型效率优化的重要里程碑。
+                </p>
+            </div>
+
+            <!-- 核心技术优势 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">PostNAS框架</div>
+                    <div class="note-content">
+                        创新的神经架构搜索管道，从<span class="highlight">预训练的全注意力模型</span>开始，
+                        冻结MLP权重，高效探索注意力块设计。相比传统方法显著降低架构搜索成本，
+                        避免了从头开始训练的巨大开销。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">混合注意力架构</div>
+                    <div class="note-content">
+                        精心设计的<span class="highlight">全注意力、滑动窗口注意力和线性注意力</span>组合。
+                        在保持高精度的同时将计算复杂度从<span class="highlight">O(n²)优化到O(n)</span>，
+                        大幅提升长文本处理效率。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">JetBlock技术</div>
+                    <div class="note-content">
+                        全新的线性注意力块设计，采用<span class="highlight">动态因果卷积核</span>和核生成器。
+                        相比静态卷积具有更强的适应性，能够根据输入动态调整特征提取模式，
+                        同时移除冗余操作提升效率。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">硬件感知优化</div>
+                    <div class="note-content">
+                        针对特定硬件平台进行架构搜索和参数优化，确保在实际部署环境中获得最佳性能表现。
+                        通过<span class="highlight">批处理优化和KV缓存管理</span>，
+                        最大化GPU利用率和吞吐量。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 性能对比图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="../assets/images/Comparison Between Jet-Nemotron and State-of-the-Art Efficient Language Models.png"
+                        alt="Jet-Nemotron与最先进高效语言模型的对比">
+                </div>
+                <div class="image-caption">
+                    Jet-Nemotron与最先进高效语言模型的性能对比 - 在H100 GPU上64K上下文长度下的测试结果
+                </div>
+            </div>
+
+            <!-- 关键性能数据 -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">53.6×</div>
+                    <div class="stat-label">生成吞吐量提升</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">6.1×</div>
+                    <div class="stat-label">预填充速度提升</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">47×</div>
+                    <div class="stat-label">相比Qwen3性能提升</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">59.6%</div>
+                    <div class="stat-label">MMLU准确率</div>
+                </div>
+            </div>
+
+            <!-- PostNAS技术路线图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="../assets/images/PostNAS Roadmap.png" alt="PostNAS技术路线图">
+                </div>
+                <div class="image-caption">
+                    PostNAS技术路线图 - 从预训练模型开始的粗到精架构搜索流程
+                </div>
+            </div>
+
+            <!-- PostNAS四个关键步骤 -->
+            <div class="tech-steps">
+                <div class="step-note">
+                    <div class="step-number">1</div>
+                    <div class="step-title">全注意力层放置和消除</div>
+                    <div class="step-content">
+                        使用<span class="highlight">once-for-all超网络</span>自动学习最优的全注意力层位置。
+                        这一步骤显著优于传统的均匀放置策略，在保持关键任务精度的同时减少计算开销。
+                        通过智能放置，模型能够在最关键的位置保留全注意力机制。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">2</div>
+                    <div class="step-title">线性注意力块选择</div>
+                    <div class="step-content">
+                        系统性评估现有线性注意力机制，在准确性、训练效率和推理速度之间找到最优平衡点。
+                        避免了传统方法依赖小型代理任务的局限性，确保搜索结果能够直接转化为最终模型的性能提升。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">3</div>
+                    <div class="step-title">JetBlock创新设计</div>
+                    <div class="step-content">
+                        引入<span class="highlight">动态因果卷积核生成器</span>，实现基于输入条件的自适应特征提取。
+                        相比传统静态卷积，JetBlock能够根据不同输入动态调整卷积核参数，
+                        同时移除Query和Key上的冗余静态卷积操作。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">4</div>
+                    <div class="step-title">硬件感知架构搜索</div>
+                    <div class="step-content">
+                        考虑实际硬件约束进行超参数优化，确保模型在目标部署环境中达到最佳性能表现。
+                        通过调整批处理大小、chunk大小等参数，最大化GPU内存利用率和计算吞吐量。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 层放置搜索结果 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="../assets/images/Layer Placement Search Results on Qwen2.5-1.5B.png" alt="层放置搜索结果">
+                </div>
+                <div class="image-caption">
+                    在Qwen2.5-1.5B上的层放置搜索结果 - 展示PostNAS如何智能选择全注意力层位置
+                </div>
+            </div>
+
+            <!-- 效率对比 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="../assets/images/Efficiency Comparison Across Different Context Lengths.png"
+                        alt="不同上下文长度下的效率对比">
+                </div>
+                <div class="image-caption">
+                    不同上下文长度下的效率对比 - Jet-Nemotron在长文本处理中展现出显著优势
+                </div>
+            </div>
+
+            <!-- 技术要点总结 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">核心创新总结</div>
+                    <div class="note-content">
+                        Jet-Nemotron的成功源于<span class="highlight">系统性的架构优化</span>：
+                        从PostNAS框架的高效搜索，到JetBlock的动态卷积设计，
+                        再到硬件感知的部署优化。这种端到端的优化策略确保了模型在保持高精度的同时，
+                        实现了前所未有的推理效率提升。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">实际应用价值</div>
+                    <div class="note-content">
+                        相比传统全注意力模型，Jet-Nemotron在<span class="highlight">边缘设备</span>上也表现优异：
+                        在Jetson Orin上实现8.84×速度提升，在RTX 3090上实现6.50×速度提升。
+                        这为大语言模型的广泛部署和实际应用奠定了重要基础。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 参考信息 -->
+            <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                <p style="color: #666; font-size: 14px;">
+                    基于NVIDIA发布的Jet-Nemotron研究论文 |
+                    <a href="https://arxiv.org/html/2508.15884v1"
+                        style="color: #007aff; text-decoration: none;">论文原文</a> |
+                    <a href="https://github.com/NVlabs/Jet-Nemotron"
+                        style="color: #007aff; text-decoration: none;">GitHub项目</a>
+                </p>
+            </div>
+
+            <!-- Logo区域 -->
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px;">
+                <a href="https://llm-arena.kcores.com" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; text-decoration: none;">
+                    <img src="../assets/images/kcores-llm-arena-logo-black.png" alt="Kcores LLM Arena Logo"
+                        style="max-height: 60px; opacity: 0.8; transition: all 0.3s ease; cursor: pointer;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加便签纸浮动效果
+        document.addEventListener('DOMContentLoaded', function () {
+            const noteCards = document.querySelectorAll('.note-card, .step-note, .stat-note');
+
+            noteCards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.5}s`;
+
+                card.addEventListener('mouseenter', function () {
+                    this.style.animationPlayState = 'paused';
+                    this.style.transform = 'rotate(0deg) scale(1.02)';
+                    this.style.zIndex = '10';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.animationPlayState = 'running';
+                    this.style.zIndex = '1';
+                });
+            });
+        });
+
+        // 图片加载优化
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('load', function () {
+                this.style.opacity = '1';
+            });
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
+        });
+
+        // Logo悬停效果
+        const logoLink = document.querySelector('a[href="https://llm-arena.kcores.com"]');
+        const logo = document.querySelector('img[alt="Kcores LLM Arena Logo"]');
+        if (logoLink && logo) {
+            logoLink.addEventListener('mouseenter', function () {
+                logo.style.opacity = '1';
+                logo.style.transform = 'scale(1.05)';
+            });
+
+            logoLink.addEventListener('mouseleave', function () {
+                logo.style.opacity = '0.8';
+                logo.style.transform = 'scale(1)';
+            });
+        }
+    </script>
+</body>
+
+</html>
