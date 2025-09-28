@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频模型的零样本学习与推理能力</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c2c2c;
+            background: linear-gradient(135deg, #f0f2f5 0%, #dde1e7 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+        }
+
+        .card-content {
+            padding: 50px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 便签笔记样式 */
+        .note-section {
+            margin-bottom: 40px;
+        }
+
+        .note-card {
+            background: #fff9e6;
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .note-card:nth-child(even) {
+            background: #f0f8ff;
+            border-color: #87ceeb;
+            box-shadow: 0 4px 12px rgba(135, 206, 235, 0.2);
+            transform: rotate(0.5deg);
+        }
+
+        .note-card:nth-child(3n) {
+            background: #f5fff5;
+            border-color: #90ee90;
+            box-shadow: 0 4px 12px rgba(144, 238, 144, 0.2);
+            transform: rotate(-0.3deg);
+        }
+
+        .note-card:nth-child(4n) {
+            background: #fff0f5;
+            border-color: #ff69b4;
+            box-shadow: 0 4px 12px rgba(255, 105, 180, 0.2);
+            transform: rotate(0.3deg);
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '🎬';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 24px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-card:nth-child(even)::before {
+            content: '🧠';
+        }
+
+        .note-card:nth-child(3n)::before {
+            content: '✨';
+        }
+
+        .note-card:nth-child(4n)::before {
+            content: '🔍';
+        }
+
+        .note-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-title::before {
+            content: '•';
+            color: #ff6b6b;
+            font-size: 24px;
+        }
+
+        .note-content {
+            color: #444;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* 图片区域样式 */
+        .image-section {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .image-caption {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+            padding: 0 20px;
+        }
+
+        /* 性能数据网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-note {
+            background: #fff0f5;
+            border: 2px solid #ff69b4;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-note:nth-child(even) {
+            transform: rotate(1deg);
+            background: #f0f8ff;
+            border-color: #4ecdc4;
+        }
+
+        .stat-note:nth-child(3n) {
+            background: #f5fff5;
+            border-color: #96ceb4;
+        }
+
+        .stat-note:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ff1493;
+            margin-bottom: 8px;
+        }
+
+        .stat-note:nth-child(even) .stat-number {
+            color: #4ecdc4;
+        }
+
+        .stat-note:nth-child(3n) .stat-number {
+            color: #96ceb4;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* 技术步骤 */
+        .tech-steps {
+            margin: 40px 0;
+        }
+
+        .step-note {
+            background: #f0fff0;
+            border: 2px solid #32cd32;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+            transform: rotate(0.3deg);
+        }
+
+        .step-note:nth-child(even) {
+            background: #fff8dc;
+            border-color: #daa520;
+            transform: rotate(-0.3deg);
+        }
+
+        .step-note:nth-child(3n) {
+            background: #f0f8ff;
+            border-color: #4682b4;
+            transform: rotate(0.4deg);
+        }
+
+        .step-note:nth-child(4n) {
+            background: #ffefd5;
+            border-color: #ff8c00;
+            transform: rotate(-0.4deg);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #32cd32;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .step-note:nth-child(even) .step-number {
+            background: #daa520;
+        }
+
+        .step-note:nth-child(3n) .step-number {
+            background: #4682b4;
+        }
+
+        .step-note:nth-child(4n) .step-number {
+            background: #ff8c00;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #2c2c2c;
+            margin-left: 15px;
+        }
+
+        .step-content {
+            color: #444;
+            line-height: 1.6;
+            margin-left: 15px;
+        }
+
+        /* 图片网格 */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .grid-image-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .grid-image-container:nth-child(even) {
+            transform: rotate(0.5deg);
+        }
+
+        .grid-image-container:hover {
+            transform: rotate(0deg) scale(1.02);
+        }
+
+        .grid-image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .grid-image-caption {
+            font-size: 13px;
+            color: #666;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-content {
+                padding: 30px 25px;
+            }
+
+            .title {
+                font-size: 28px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .note-card {
+                padding: 20px;
+                transform: rotate(0deg);
+            }
+
+            .note-card:hover {
+                transform: scale(1.02);
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes noteFloat {
+            0% {
+                transform: translateY(0px) rotate(-0.5deg);
+            }
+
+            50% {
+                transform: translateY(-5px) rotate(0.5deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(-0.5deg);
+            }
+        }
+
+        .note-card {
+            animation: noteFloat 6s ease-in-out infinite;
+        }
+
+        .note-card:nth-child(even) {
+            animation-delay: 2s;
+        }
+
+        .note-card:nth-child(3n) {
+            animation-delay: 4s;
+        }
+
+        .note-card:nth-child(4n) {
+            animation-delay: 1s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-card">
+        <div class="card-content">
+            <!-- 标题区域 -->
+            <div class="header-section">
+                <h1 class="title">视频模型的零样本学习与推理</h1>
+                <p class="subtitle">Video Models are Zero-shot Learners and Reasoners</p>
+                <p class="description">
+                    这篇革命性论文证明了视频生成模型（特别是<span class="highlight">Veo 3</span>）具有强大的零样本学习能力，
+                    能够在没有专门训练的情况下解决广泛的视觉任务，展现出成为<span class="highlight">通用视觉基础模型</span>的潜力。
+                    一个模型，通过简单的文本提示，就能解决从图像编辑到视觉推理的各种复杂任务。
+                </p>
+            </div>
+
+            <!-- Veo 3 零样本能力概览 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/A-qualitative-overview-of-Veo-3s-zero-shot-abilities.png"
+                        alt="Veo 3零样本能力定性概览">
+                </div>
+                <div class="image-caption">
+                    Veo 3零样本能力定性概览 - 展示模型在感知、建模、操控和推理四个层次的综合能力
+                </div>
+            </div>
+
+            <!-- 四层能力体系 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">感知层 (Perception)</div>
+                    <div class="note-content">
+                        基础视觉理解能力，包括<span class="highlight">图像增强、目标检测、视觉搜索</span>等任务。
+                        模型具备了"看清楚世界"的基本能力，成功率达到<span class="highlight">50-100%</span>。
+                        就像给AI一双敏锐的眼睛，能够在复杂场景中准确识别和定位目标物体。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">建模层 (Modeling)</div>
+                    <div class="note-content">
+                        理解物理世界规律的能力，包括<span class="highlight">物理属性理解、空间关系推理、状态记忆</span>等。
+                        模型不只是"看"，还能"理解"看到的东西，成功率为<span class="highlight">20-90%</span>。
+                        能够推理物体的浮力、重量、材质等物理特性。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">操控层 (Manipulation)</div>
+                    <div class="note-content">
+                        主动改变视觉世界的能力，包括<span class="highlight">图像编辑、工具使用、场景合成</span>等任务。
+                        从被动观察转变为主动改造，成功率达到<span class="highlight">30-80%</span>。
+                        能够执行复杂的图像编辑操作和模拟机器人的精细动作。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">推理层 (Reasoning)</div>
+                    <div class="note-content">
+                        最高层的视觉思维能力，包括<span class="highlight">迷宫求解、对称性理解、规则推导</span>等复杂任务。
+                        展现出"链式帧推理"(Chain-of-Frames)的能力，成功率为<span class="highlight">10-60%</span>。
+                        这是视频模型向通用视觉智能迈出的关键一步。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 零样本学习和推理示例 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Veo-3-zero-shot-learning-and-reasoning-examples.png"
+                        alt="Veo 3零样本学习和推理示例">
+                </div>
+                <div class="image-caption">
+                    Veo 3零样本学习和推理示例 - 展示模型在各种复杂视觉任务上的出色表现
+                </div>
+            </div>
+
+            <!-- 关键性能数据 -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">18,384</div>
+                    <div class="stat-label">生成视频数量</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">69</div>
+                    <div class="stat-label">总任务数量</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">50%</div>
+                    <div class="stat-label">迷宫解决成功率</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">42%</div>
+                    <div class="stat-label">对称性理解准确率</div>
+                </div>
+            </div>
+
+            <!-- 具体任务示例图片网格 -->
+            <div class="image-grid">
+                <div class="grid-image-container">
+                    <img src="assets/images/Visual-analogy-solving.png" alt="视觉类比解决">
+                    <div class="grid-image-caption">视觉类比解决 - 模型能够理解和应用视觉模式</div>
+                </div>
+                <div class="grid-image-container">
+                    <img src="assets/images/Visual-symmetry.png" alt="视觉对称理解">
+                    <div class="grid-image-caption">视觉对称理解 - 识别和创建对称图案</div>
+                </div>
+                <div class="grid-image-container">
+                    <img src="assets/images/Maze-solving.png" alt="迷宫求解">
+                    <div class="grid-image-caption">迷宫求解 - 找到从起点到终点的最优路径</div>
+                </div>
+                <div class="grid-image-container">
+                    <img src="assets/images/Image-editing.png" alt="图像编辑">
+                    <div class="grid-image-caption">图像编辑 - 精确的姿态改变和对象操作</div>
+                </div>
+                <div class="grid-image-container">
+                    <img src="assets/images/Object-extraction.png" alt="对象提取">
+                    <div class="grid-image-caption">对象提取 - 准确分离前景和背景对象</div>
+                </div>
+                <div class="grid-image-container">
+                    <img src="assets/images/Class-agnostic-instance-segmentation.png" alt="类别无关实例分割">
+                    <div class="grid-image-caption">类别无关实例分割 - 通用的对象分割能力</div>
+                </div>
+                <div class="grid-image-container">
+                    <img src="assets/images/Edge-detection.png" alt="边缘检测">
+                    <div class="grid-image-caption">边缘检测 - 精确的图像边缘识别</div>
+                </div>
+            </div>
+
+            <!-- 研究方法与关键发现 -->
+            <div class="tech-steps">
+                <div class="step-note">
+                    <div class="step-number">1</div>
+                    <div class="step-title">极简研究方法</div>
+                    <div class="step-content">
+                        研究方法极其简单：给Veo 3一张图片和文本描述，让它生成<span class="highlight">8秒720p视频</span>。
+                        没有微调，没有特殊训练，只使用<span class="highlight">提示工程(Prompting)</span>。
+                        这种简洁的方法充分展现了预训练模型的强大泛化能力。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">2</div>
+                    <div class="step-title">大规模系统评估</div>
+                    <div class="step-content">
+                        进行了史无前例的大规模评估：<span class="highlight">62个定性任务 + 7个定量任务</span>，
+                        每个任务测试12次计算成功率。总共生成了18,384个视频，
+                        系统性地验证了视频模型的零样本学习能力。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">3</div>
+                    <div class="step-title">快速性能提升</div>
+                    <div class="step-content">
+                        从Veo 2到Veo 3仅半年时间，性能实现了跨越式提升：
+                        迷宫解决从<span class="highlight">8%提升到50%</span>，
+                        对称性理解从<span class="highlight">17%提升到42%</span>。
+                        这种快速进步暗示着通用视觉智能正在加速到来。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">4</div>
+                    <div class="step-title">范式转变的意义</div>
+                    <div class="step-content">
+                        这项研究预示着视觉领域的重大范式转变：
+                        从<span class="highlight">任务特化模型转向通用视觉智能</span>，
+                        从<span class="highlight">微调训练转向提示工程</span>。
+                        正如GPT改变了NLP领域，视频模型正在改变计算机视觉。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 技术洞察与未来展望 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">为什么视频模型如此强大？</div>
+                    <div class="note-content">
+                        <span class="highlight">丰富的训练数据</span>：网络规模的视频数据包含了丰富的视觉世界知识；
+                        <span class="highlight">生成式学习</span>：通过预测下一帧，模型学会了世界的运行规律；
+                        <span class="highlight">时空建模</span>：视频天然包含时间和空间信息，更接近真实世界；
+                        <span class="highlight">大规模参数</span>：足够的模型容量存储复杂的视觉-语言映射关系。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">历史意义与影响</div>
+                    <div class="note-content">
+                        这项研究标志着计算机视觉领域的<span class="highlight">范式转变</span>：
+                        从需要为每个任务专门训练模型，到一个通用模型解决多种任务；
+                        从复杂的数据收集和模型训练，到简单的自然语言描述。
+                        视频模型正在成为视觉领域的"GPT时刻"。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">局限性与未来方向</div>
+                    <div class="note-content">
+                        虽然成果令人瞩目，但模型仍存在局限：
+                        <span class="highlight">精确深度估计困难、复杂物理推理能力有限、抽象推理表现待提升</span>。
+                        这些挑战为未来研究指明了方向，也展现了巨大的改进空间。
+                        下一步发展将聚焦于提升推理精度和扩展任务覆盖范围。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 参考信息 -->
+            <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                <p style="color: #666; font-size: 14px;">
+                    基于"Video Models are Zero-shot Learners and Reasoners"研究论文 |
+                    <a href="https://arxiv.org/pdf/2509.20328"
+                        style="color: #ff6b6b; text-decoration: none;">论文原文</a> |
+                    <a href="https://video-zero-shot.github.io/"
+                        style="color: #ff6b6b; text-decoration: none;">项目主页</a>
+                </p>
+            </div>
+
+            <!-- Logo区域 -->
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px;">
+                <a href="https://llm-arena.kcores.com" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; text-decoration: none;">
+                    <img src="assets/images/kcores-llm-arena-logo-black.png" alt="Kcores LLM Arena Logo"
+                        style="max-height: 60px; opacity: 0.8; transition: all 0.3s ease; cursor: pointer;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加便签纸浮动效果
+        document.addEventListener('DOMContentLoaded', function () {
+            const noteCards = document.querySelectorAll('.note-card, .step-note, .stat-note, .grid-image-container');
+
+            noteCards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.3}s`;
+
+                card.addEventListener('mouseenter', function () {
+                    this.style.animationPlayState = 'paused';
+                    this.style.transform = 'rotate(0deg) scale(1.02)';
+                    this.style.zIndex = '10';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.animationPlayState = 'running';
+                    this.style.zIndex = '1';
+                });
+            });
+        });
+
+        // 图片加载优化
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('load', function () {
+                this.style.opacity = '1';
+            });
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
+        });
+
+        // Logo悬停效果
+        const logoLink = document.querySelector('a[href="https://llm-arena.kcores.com"]');
+        const logo = document.querySelector('img[alt="Kcores LLM Arena Logo"]');
+        if (logoLink && logo) {
+            logoLink.addEventListener('mouseenter', function () {
+                logo.style.opacity = '1';
+                logo.style.transform = 'scale(1.05)';
+            });
+
+            logoLink.addEventListener('mouseleave', function () {
+                logo.style.opacity = '0.8';
+                logo.style.transform = 'scale(1)';
+            });
+        }
+
+        // 图片网格悬停效果
+        document.querySelectorAll('.grid-image-container').forEach(container => {
+            container.addEventListener('mouseenter', function () {
+                this.style.transform = 'rotate(0deg) scale(1.05)';
+                this.style.zIndex = '10';
+            });
+
+            container.addEventListener('mouseleave', function () {
+                const rotation = this.classList.contains('even') ? 'rotate(0.5deg)' : 'rotate(-0.5deg)';
+                this.style.transform = rotation;
+                this.style.zIndex = '1';
+            });
+        });
+    </script>
+</body>
+
+</html>
