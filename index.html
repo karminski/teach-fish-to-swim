@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班门弄斧 (Teach Fish to Swim) - 目录</title>
+    <meta name="description" content="带大家精读论文，共同学习，共同进步">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', '宋体', serif;
+            line-height: 1.8;
+            color: #333;
+            background: #fff;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 40px;
+        }
+
+        .logo {
+            max-width: 200px;
+            height: auto;
+            margin: 0 auto 30px;
+            display: block;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: 400;
+            margin-bottom: 10px;
+            color: #333;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            font-weight: 300;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #555;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .toc {
+            margin: 60px 0;
+        }
+
+        .toc-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #333;
+            letter-spacing: 1px;
+        }
+
+        .toc-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .toc-item {
+            margin-bottom: 25px;
+            border-bottom: 1px dotted #ddd;
+            position: relative;
+        }
+
+        .toc-item:last-child {
+            border-bottom: none;
+        }
+
+        .toc-link {
+            text-decoration: none;
+            color: #333;
+            display: block;
+            padding: 20px 0;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .toc-link:hover {
+            background-color: #f9f9f9;
+            transform: translateX(5px);
+        }
+
+        .toc-link:hover .toc-title-text {
+            color: #0066cc;
+        }
+
+        .toc-number {
+            font-size: 18px;
+            font-weight: 500;
+            color: #666;
+            margin-right: 15px;
+            min-width: 30px;
+            display: inline-block;
+        }
+
+        .toc-title-text {
+            font-size: 18px;
+            font-weight: 400;
+            display: inline-block;
+            width: calc(100% - 45px);
+            transition: color 0.2s ease;
+        }
+
+        .toc-subtitle {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+            margin-left: 45px;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 80px;
+            padding-top: 40px;
+            border-top: 2px solid #333;
+            text-align: center;
+        }
+
+        .footer-links {
+            margin-bottom: 20px;
+        }
+
+        .footer-links a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 16px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .copyright {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .quote {
+            font-style: italic;
+            margin-top: 20px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            body {
+                padding: 40px 20px;
+            }
+            
+            .title {
+                font-size: 28px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+            }
+            
+            .toc-number {
+                font-size: 16px;
+                min-width: 25px;
+                margin-right: 10px;
+            }
+            
+            .toc-title-text {
+                font-size: 16px;
+                width: calc(100% - 35px);
+            }
+            
+            .toc-subtitle {
+                margin-left: 35px;
+                font-size: 13px;
+            }
+        }
+
+        /* 打印样式 */
+        @media print {
+            body {
+                max-width: none;
+                padding: 40px;
+            }
+            
+            .footer-links a {
+                color: #333;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <img src="./assets/images/kcores-llm-arena-logo-black.png" alt="Logo" class="logo">
+        <h1 class="title">班门弄斧</h1>
+        <p class="subtitle">Teach Fish to Swim</p>
+        <p class="description">带大家精读论文，共同学习，共同进步</p>
+    </header>
+
+    <main class="toc">
+        <h2 class="toc-title">目录 Contents</h2>
+        
+        <ul class="toc-list">
+            <li class="toc-item">
+                <a href="./jet-nemotron/" class="toc-link">
+                    <span class="toc-number">01.</span>
+                    <span class="toc-title-text">Jet-Nemotron</span>
+                    <div class="toc-subtitle">突破性的语言模型优化技术</div>
+                </a>
+            </li>
+            
+            <li class="toc-item">
+                <a href="./video-models-are-zero-shot-learners-and-reasoners/" class="toc-link">
+                    <span class="toc-number">02.</span>
+                    <span class="toc-title-text">Video Models are Zero-shot Learners and Reasoners</span>
+                    <div class="toc-subtitle">视频生成模型的零样本学习能力 (Veo 3 的论文)</div>
+                </a>
+            </li>
+        </ul>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="https://swim.kcores.com" target="_blank">网页版</a>
+            <a href="https://github.com/karminski/teach-fish-to-swim" target="_blank">GitHub</a>
+        </div>
+        
+        <div class="copyright">
+            <p>内容采用 CC-BY-SA-4.0 协议</p>
+            <p>Made by @karminski</p>
+            <div class="quote">
+                "班门弄斧"意为在专家面前显示本领，这里用作谦辞。<br>
+                我们相信通过共同学习，每个人都能在AI的海洋中游得更远。
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
