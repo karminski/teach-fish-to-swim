@@ -20,6 +20,7 @@
 
 - [jet-nemotron](./jet-nemotron/)
 - [Video Models are Zero-shot Learners and Reasoners](./video-models-are-zero-shot-learners-and-reasoners/)
+- [SINQ: Sinkhorn-Normalized Quantization](./sinq/)
 
 ## License
 

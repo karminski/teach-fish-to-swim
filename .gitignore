@@ -1,0 +1,52 @@
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Cursor AI
+.cursor/
+.specstory/
+.cursorindexingignore
+
+# OS specific
+Thumbs.db
+Desktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+
+# Node modules (if you add any build tools later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Build outputs (if you add any build process later)
+dist/
+build/
+*.min.js
+*.min.css
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Optional: Uncomment if you don't want to track DOCUMENTS folder
+# DOCUMENTS/
+
