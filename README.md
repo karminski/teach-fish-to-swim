@@ -25,4 +25,4 @@
 
 ## License
 
-CC-BY-SA-4.0 @karminski
+CC-BY-NC-SA-4.0 @karminski
