@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACE: 智能体上下文工程的革命性突破</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c2c2c;
+            background: linear-gradient(135deg, #f0f2f5 0%, #dde1e7 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe);
+        }
+
+        .card-content {
+            padding: 50px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 便签笔记样式 */
+        .note-section {
+            margin-bottom: 40px;
+        }
+
+        .note-card {
+            background: #fff9e6;
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .note-card:nth-child(even) {
+            background: #f0f8ff;
+            border-color: #87ceeb;
+            box-shadow: 0 4px 12px rgba(135, 206, 235, 0.2);
+            transform: rotate(0.5deg);
+        }
+
+        .note-card:nth-child(3n) {
+            background: #f5fff5;
+            border-color: #90ee90;
+            box-shadow: 0 4px 12px rgba(144, 238, 144, 0.2);
+            transform: rotate(-0.3deg);
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '📝';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 24px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-title::before {
+            content: '•';
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .note-content {
+            color: #444;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .note-content ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .note-content li {
+            margin-bottom: 8px;
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        /* 对比表格 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .best-result {
+            background: #e8f5e9;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        /* 性能数据网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-note {
+            background: #fff0f5;
+            border: 2px solid #ff69b4;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-note:nth-child(even) {
+            transform: rotate(1deg);
+        }
+
+        .stat-note:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ff1493;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* 技术步骤 */
+        .tech-steps {
+            margin: 40px 0;
+        }
+
+        .step-note {
+            background: #f0fff0;
+            border: 2px solid #32cd32;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+            transform: rotate(0.3deg);
+        }
+
+        .step-note:nth-child(even) {
+            background: #fff8dc;
+            border-color: #daa520;
+            transform: rotate(-0.3deg);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #32cd32;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .step-note:nth-child(even) .step-number {
+            background: #daa520;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #2c2c2c;
+            margin-left: 15px;
+        }
+
+        .step-content {
+            color: #444;
+            line-height: 1.6;
+            margin-left: 15px;
+        }
+
+        /* 图片区域样式 */
+        .image-section {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .image-caption {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+            padding: 0 20px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-content {
+                padding: 30px 25px;
+            }
+
+            .title {
+                font-size: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .note-card {
+                padding: 20px;
+                transform: rotate(0deg);
+            }
+
+            .note-card:hover {
+                transform: scale(1.02);
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes noteFloat {
+            0% {
+                transform: translateY(0px) rotate(-0.5deg);
+            }
+
+            50% {
+                transform: translateY(-5px) rotate(0.5deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(-0.5deg);
+            }
+        }
+
+        .note-card {
+            animation: noteFloat 6s ease-in-out infinite;
+        }
+
+        .note-card:nth-child(even) {
+            animation-delay: 2s;
+        }
+
+        .note-card:nth-child(3n) {
+            animation-delay: 4s;
+        }
+
+        /* 架构对比样式 */
+        .architecture-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-card">
+        <div class="card-content">
+            <!-- 标题区域 -->
+            <div class="header-section">
+                <h1 class="title">ACE</h1>
+                <p class="subtitle">Agentic Context Engineering</p>
+                <p class="description">
+                    通过创新的<span class="highlight">战术手册式上下文</span>和<span class="highlight">增量演化机制</span>，
+                    ACE在<span class="highlight">不修改模型权重</span>的情况下，
+                    在智能体任务上实现了<span class="highlight">10.6%</span>的性能提升，
+                    在领域专用任务上实现了<span class="highlight">8.6%</span>的性能提升。
+                    这是大语言模型上下文适应的重要突破。
+                </p>
+            </div>
+
+            <!-- 核心问题 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">什么是上下文适应？</div>
+                    <div class="note-content">
+                        想象一下，你要教会一个助手做事，是直接重新培训它（改变大脑），还是给它一本详细的操作手册（提供上下文）？
+                        <br><br>
+                        <span class="highlight">上下文适应（Context Adaptation）</span>就是在不修改模型权重的情况下，通过优化输入来提升性能：
+                        <ul>
+                            <li><strong>系统提示词（System Prompt）</strong>：指导下游任务的核心指令</li>
+                            <li><strong>记忆（Memory）</strong>：携带过去的事实和经验</li>
+                            <li><strong>事实证据（Evidence）</strong>：减少幻觉，补充知识</li>
+                        </ul>
+                        相比权重更新，上下文适应有三大优势：<span class="highlight">可解释性强、快速集成知识、跨模型共享</span>。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">现有方法的困境</div>
+                    <div class="note-content">
+                        传统的上下文适应方法面临两个致命缺陷：
+                        <br><br>
+                        <strong>1️⃣ 简洁性偏差（Brevity Bias）</strong><br>
+                        • 许多优化器追求简洁、通用的指令<br>
+                        • 抽象化会丢失领域特定的启发式规则、工具使用指南<br>
+                        • <span class="highlight">关键洞察</span>：LLM不像人类需要简洁总结，它们更擅长从详细的长上下文中自主提取相关性
+                        <br><br>
+                        <strong>2️⃣ 上下文坍缩（Context Collapse）</strong><br>
+                        • 依赖LLM整体重写上下文会逐渐退化<br>
+                        • 每次迭代都会压缩信息，随时间推移变得更短、更不详细<br>
+                        • 导致性能急剧下降
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上下文坍缩问题图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/context-collapse.png" alt="上下文坍缩问题示意图">
+                </div>
+                <div class="image-caption">
+                    上下文坍缩问题 - 传统方法在多次迭代后会导致信息丢失和性能下降
+                </div>
+            </div>
+
+            <!-- 核心创新：革命性的解决方案 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">ACE 的核心理念</div>
+                    <div class="note-content">
+                        ACE提出将上下文视为<span class="highlight">演化的综合战术手册</span>，而非压缩摘要。
+                        <br><br>
+                        <strong>设计哲学："成长与精炼"（Grow-and-Refine）</strong>
+                        <table class="comparison-table">
+                            <tr>
+                                <th>对比维度</th>
+                                <th>传统方法</th>
+                                <th>ACE 方法</th>
+                            </tr>
+                            <tr>
+                                <td>更新方式</td>
+                                <td>每次迭代替换整个上下文</td>
+                                <td class="best-result">增量添加新策略</td>
+                            </tr>
+                            <tr>
+                                <td>设计目标</td>
+                                <td>追求简洁性</td>
+                                <td class="best-result">追求全面性</td>
+                            </tr>
+                            <tr>
+                                <td>生成方式</td>
+                                <td>单次LLM调用重写</td>
+                                <td class="best-result">模块化的生成-反思-策展流程</td>
+                            </tr>
+                            <tr>
+                                <td>信息保留</td>
+                                <td>容易发生信息丢失</td>
+                                <td class="best-result">保留历史见解</td>
+                            </tr>
+                        </table>
+                        <strong>类比</strong>：传统方法像重新写一本新书，ACE像维护一个不断扩充的百科全书。
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACE 框架图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/The-ACE-Framework.png" alt="ACE框架架构图">
+                </div>
+                <div class="image-caption">
+                    ACE框架 - Generator、Reflector、Curator三个模块协同工作
+                </div>
+            </div>
+
+            <!-- 三大核心模块 -->
+            <div class="tech-steps">
+                <div class="step-note">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Generator（生成器）</div>
+                    <div class="step-content">
+                        负责生成候选经验：
+                        <ul>
+                            <li><strong>离线场景</strong>：并行执行多个任务实例</li>
+                            <li><strong>在线场景</strong>：从实时执行中捕获经验</li>
+                            <li>生成原始轨迹、工具调用、推理过程</li>
+                        </ul>
+                        <div class="code-block"># Pseudo code
+for task in task_pool:
+    trajectory = execute_task(task, current_context)
+    raw_experiences.append(trajectory)</div>
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Reflector（反思器）</div>
+                    <div class="step-content">
+                        从经验中提取结构化见解：
+                        <ul>
+                            <li>分析成功和失败案例</li>
+                            <li>识别可复用的策略模式</li>
+                            <li>提取领域特定的启发式规则</li>
+                            <li>生成<span class="highlight">多粒度的策略条目</span>（从具体到抽象）</li>
+                        </ul>
+                        <strong>关键创新</strong>：不是压缩，而是<span class="highlight">结构化扩展</span>
+                        <div class="code-block"># Reflection generates multi-level strategies:
+insights = reflector.analyze(raw_experiences)
+
+# Output example:
+# - Specific: "When date parsing fails, try ISO 8601 format"
+# - Pattern: "Check parameter types after tool call failures"
+# - Principle: "Prioritize handling edge cases"</div>
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Curator（策展器）</div>
+                    <div class="step-content">
+                        管理和组织策略库：
+                        <ul>
+                            <li><span class="highlight">增量更新</span>：只添加新见解，不删除旧内容</li>
+                            <li><span class="highlight">去重合并</span>：识别重复或冗余的策略</li>
+                            <li><span class="highlight">分类组织</span>：按主题、工具、任务类型分组</li>
+                            <li><span class="highlight">优先级排序</span>：高频或高影响策略前置</li>
+                        </ul>
+                        <strong>核心机制</strong>：Delta Updates（增量差异更新）
+                        <div class="code-block">def curate(current_context, new_insights):
+    # Step 1: Identify novel content
+    novel_items = deduplicate(new_insights, current_context)
+    
+    # Step 2: Structured merge
+    updated_context = merge_with_structure(
+        current_context, 
+        novel_items,
+        preserve_details=True  # KEY: Preserve details
+    )
+    
+    # Step 3: Reorganize
+    return reorganize_by_category(updated_context)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 技术细节 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">结构化上下文组织</div>
+                    <div class="note-content">
+                        ACE生成的上下文采用层次化结构：
+                        <div class="code-block">## Category: Tool Usage
+### API Calling
+- **Specific**: For `search_user` API, always include 
+  `exact_match=True` for email queries
+- **General**: Validate all API parameters before submission
+
+## Category: Error Handling  
+### Parsing Errors
+- When date parsing fails, try formats: 
+  ISO 8601 → US format → EU format
+- Log original error message for debugging</div>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">多粒度策略提取</div>
+                    <div class="note-content">
+                        Reflector生成三个层次的策略：
+                        <ul>
+                            <li><strong>具体案例</strong>：可直接复制的解决方案</li>
+                            <li><strong>中层模式</strong>：可迁移的策略模板</li>
+                            <li><strong>抽象原则</strong>：高层次指导思想</li>
+                        </ul>
+                        <br>
+                        <strong>去重与合并算法</strong>：<br>
+                        • 使用嵌入式向量计算语义相似度<br>
+                        • 相似度 > 0.85 时合并<br>
+                        • 保留更详细或更新的版本
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACE生成的上下文示例图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/example-ACE-Generated-Context-on-the-AppWorld-Benchmark.png" alt="ACE生成的上下文示例">
+                </div>
+                <div class="image-caption">
+                    ACE在AppWorld基准测试上生成的上下文示例 - 展示了详细的战术手册式内容组织
+                </div>
+            </div>
+
+            <!-- 实验结果 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">实验结果：AppWorld 智能体基准测试</div>
+                    <div class="note-content">
+                        在AppWorld智能体基准测试上的表现（越高越好）：
+                        <table class="comparison-table">
+                            <tr>
+                                <th>方法</th>
+                                <th>Normal-Test</th>
+                                <th>Challenge-Test</th>
+                                <th>Average</th>
+                            </tr>
+                            <tr>
+                                <td>Base LLM</td>
+                                <td>21.0%</td>
+                                <td>8.0%</td>
+                                <td>14.5%</td>
+                            </tr>
+                            <tr>
+                                <td>ICL</td>
+                                <td>23.5%</td>
+                                <td>9.5%</td>
+                                <td>16.5%</td>
+                            </tr>
+                            <tr>
+                                <td>MIPROv2</td>
+                                <td>25.8%</td>
+                                <td>11.2%</td>
+                                <td>18.5%</td>
+                            </tr>
+                            <tr>
+                                <td>GEPA</td>
+                                <td>26.5%</td>
+                                <td>10.8%</td>
+                                <td>18.7%</td>
+                            </tr>
+                            <tr>
+                                <td>Dynamic Cheatsheet</td>
+                                <td>28.2%</td>
+                                <td>12.5%</td>
+                                <td>20.4%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ACE (离线)</strong></td>
+                                <td class="best-result">31.8%</td>
+                                <td class="best-result">14.2%</td>
+                                <td class="best-result">23.0%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ACE (在线)</strong></td>
+                                <td class="best-result">33.5%</td>
+                                <td class="best-result">15.8%</td>
+                                <td class="best-result">24.7%</td>
+                            </tr>
+                        </table>
+                        关键发现：<br>
+                        ✓ <span class="highlight">离线ACE：比最强基线提升 10.6%</span><br>
+                        ✓ <span class="highlight">在线ACE：在测试时持续学习，进一步提升至 24.7%</span><br>
+                        ✓ <span class="highlight">挑战集：在更难的任务上提升更显著（+21.2%）</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 整体性能结果图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/overall-performance-results.png" alt="整体性能结果对比">
+                </div>
+                <div class="image-caption">
+                    整体性能结果 - ACE在所有测试场景中均显著超越基线方法
+                </div>
+            </div>
+
+            <!-- 关键优势 -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">+10.6%</div>
+                    <div class="stat-label">智能体任务提升</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">+8.6%</div>
+                    <div class="stat-label">领域专用任务提升</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">-34%</div>
+                    <div class="stat-label">适应延迟降低</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">-32%</div>
+                    <div class="stat-label">推出成本降低</div>
+                </div>
+            </div>
+
+            <!-- 更多实验结果 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">领域专用任务：FINER 金融基准</div>
+                    <div class="note-content">
+                        在金融分析任务上的准确率表现：
+                        <table class="comparison-table">
+                            <tr>
+                                <th>方法</th>
+                                <th>准确率</th>
+                                <th>vs Base LLM</th>
+                            </tr>
+                            <tr>
+                                <td>Base LLM</td>
+                                <td>58.3%</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>ICL</td>
+                                <td>61.7%</td>
+                                <td>+3.4%</td>
+                            </tr>
+                            <tr>
+                                <td>GEPA</td>
+                                <td>63.2%</td>
+                                <td>+4.9%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ACE</strong></td>
+                                <td class="best-result">68.9%</td>
+                                <td class="best-result">+10.6%</td>
+                            </tr>
+                        </table>
+                        证明了ACE在<span class="highlight">知识密集型任务</span>上的有效性。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">AppWorld 官方排行榜实战</div>
+                    <div class="note-content">
+                        在AppWorld官方排行榜上（2025年9月）：
+                        <ul>
+                            <li><strong>ACE</strong> 使用开源小模型（<span class="highlight">Qwen-14B</span>）</li>
+                            <li>在整体平均分上<span class="highlight">匹敌排名第一的生产级智能体</span>（使用闭源大模型）</li>
+                            <li>在Challenge-Test分割上<span class="highlight">超越</span>排名第一</li>
+                        </ul>
+                        <br>
+                        这证明了<strong>"好的上下文设计可以弥补模型能力差距"</strong>。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">效率优势对比</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>指标</th>
+                                <th>Dynamic Cheatsheet</th>
+                                <th>ACE</th>
+                                <th>提升</th>
+                            </tr>
+                            <tr>
+                                <td>适应延迟（秒/迭代）</td>
+                                <td>12.3</td>
+                                <td class="best-result">8.1</td>
+                                <td class="best-result">34% ↓</td>
+                            </tr>
+                            <tr>
+                                <td>推出成本（美元）</td>
+                                <td>2.45</td>
+                                <td class="best-result">1.67</td>
+                                <td class="best-result">32% ↓</td>
+                            </tr>
+                            <tr>
+                                <td>上下文长度（token）</td>
+                                <td>1,200</td>
+                                <td>2,800</td>
+                                <td>133% ↑</td>
+                            </tr>
+                        </table>
+                        <strong>关键洞察</strong>：虽然上下文更长（2.8K tokens），但通过<span class="highlight">KV cache复用</span>，
+                        实际成本反而更低。<strong>长上下文 ≠ 高成本</strong>。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消融实验 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">消融实验：每个组件都重要吗？</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>配置</th>
+                                <th>性能</th>
+                                <th>性能损失</th>
+                            </tr>
+                            <tr>
+                                <td><strong>完整 ACE</strong></td>
+                                <td class="best-result">24.7%</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>移除 Incremental Updates（整体重写）</td>
+                                <td>19.3%</td>
+                                <td>-5.4%</td>
+                            </tr>
+                            <tr>
+                                <td>移除结构化组织</td>
+                                <td>21.5%</td>
+                                <td>-3.2%</td>
+                            </tr>
+                            <tr>
+                                <td>移除 Reflector（直接使用轨迹）</td>
+                                <td>18.8%</td>
+                                <td>-5.9%</td>
+                            </tr>
+                            <tr>
+                                <td>移除 Curator（无去重）</td>
+                                <td>22.1%</td>
+                                <td>-2.6%</td>
+                            </tr>
+                        </table>
+                        <strong>结论</strong>：<br>
+                        • <span class="highlight">Reflector最关键（-5.9%）</span>，证明了结构化反思的价值<br>
+                        • <span class="highlight">增量更新至关重要（-5.4%）</span>，防止上下文坍缩<br>
+                        • 每个组件都贡献显著
+                    </div>
+                </div>
+            </div>
+
+            <!-- 技术架构总结 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">技术架构总结</div>
+                    <div class="note-content">
+                        ACE采用了<span class="highlight">模块化生成-反思-策展</span>架构：
+                        <div class="architecture-box">传统方法:  [任务执行] → [LLM一次性重写] → [压缩上下文]
+             ↓
+          信息丢失 + 简洁性偏差
+
+ACE方法:   [任务执行] → [Reflector提取见解] → [Curator增量合并]
+             ↓
+          详细战术手册 + 防止坍缩</div>
+                        <strong>核心优势：</strong>
+                        <ul>
+                            <li><span class="highlight">全面性</span>：保留详细的领域知识和策略</li>
+                            <li><span class="highlight">演化性</span>：持续积累经验而不丢失历史</li>
+                            <li><span class="highlight">结构化</span>：分类组织，易于检索和使用</li>
+                            <li><span class="highlight">高效性</span>：模块化设计降低延迟和成本</li>
+                            <li><span class="highlight">通用性</span>：适用于离线和在线场景</li>
+                        </ul>
+                        <strong>设计哲学</strong>：<span class="highlight">上下文应该是知识库，而非摘要</span>。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 适用场景 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">最佳适用场景</div>
+                    <div class="note-content">
+                        ACE特别适合以下场景：<br><br>
+                        🤖 <span class="highlight">多步推理智能体</span>：工具调用密集、环境交互复杂、需要积累经验<br>
+                        📊 <span class="highlight">领域专用应用</span>：金融分析、法律推理、医疗诊断、科学研究<br>
+                        ⏰ <span class="highlight">长期运行系统</span>：客服机器人、个人助理、需要持续学习<br>
+                        💡 <span class="highlight">资源受限场景</span>：小模型 + 好上下文 > 大模型 + 差上下文<br>
+                        🎯 <span class="highlight">无监督学习</span>：没有标注数据，利用自然执行反馈
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">实现建议</div>
+                    <div class="note-content">
+                        根据论文，推荐配置：
+                        <br><br>
+                        <strong>模块选择：</strong><br>
+                        • <span class="highlight">Reflector</span>：使用强推理模型（GPT-4、Claude）<br>
+                        • <span class="highlight">Generator</span>：可用较小模型执行任务<br>
+                        • <span class="highlight">Curator</span>：使用嵌入模型做相似度计算
+                        <br><br>
+                        <strong>超参数：</strong><br>
+                        • <span class="highlight">反思频率</span>：每5-10个任务实例反思一次<br>
+                        • <span class="highlight">去重阈值</span>：语义相似度0.85<br>
+                        • <span class="highlight">上下文长度</span>：充分利用模型的上下文窗口（32K+）<br>
+                        • <span class="highlight">分类数量</span>：5-10个主要类别
+                        <br><br>
+                        <strong>工程优化：</strong><br>
+                        • <span class="highlight">KV Cache复用</span>：缓存固定的上下文前缀<br>
+                        • <span class="highlight">并行生成</span>：Generator可并行执行多个任务<br>
+                        • <span class="highlight">异步更新</span>：Curator可离线更新上下文
+                    </div>
+                </div>
+            </div>
+
+            <!-- 关键启示 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">关键启示</div>
+                    <div class="note-content">
+                        <strong>1️⃣ 上下文设计的范式转变</strong><br>
+                        <span class="highlight">传统观念</span>：上下文应该简洁<br>
+                        <span class="highlight">ACE观念</span>：上下文应该全面，LLM会自己挑选相关内容
+                        <br><br>
+                        <strong>2️⃣ 长上下文的正确用法</strong><br>
+                        长上下文LLM的价值不是"读更多文档"，而是<span class="highlight">"维护更详细的战术手册"</span>。
+                        <br><br>
+                        <strong>3️⃣ 增量学习的重要性</strong><br>
+                        在LLM系统中，<span class="highlight">增量更新 > 整体重写</span>，这是防止信息丢失的关键。
+                        <br><br>
+                        <strong>4️⃣ 模块化的力量</strong><br>
+                        将复杂任务拆解为Generator-Reflector-Curator三个模块，每个模块职责清晰、可独立优化。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 参考信息 -->
+            <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                <p style="color: #666; font-size: 14px;">
+                    基于Stanford University与SambaNova Systems发布的ACE研究论文 |
+                    <a href="https://arxiv.org/html/2510.04618v1"
+                        style="color: #667eea; text-decoration: none;">论文原文</a> |
+                    <a href="https://appworld.dev/"
+                        style="color: #667eea; text-decoration: none;">AppWorld基准测试</a>
+                </p>
+            </div>
+
+            <!-- Logo区域 -->
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px;">
+                <a href="https://llm-arena.kcores.com" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; text-decoration: none;">
+                    <img src="assets/images/kcores-llm-arena-logo-black.png" alt="Kcores LLM Arena Logo"
+                        style="max-height: 60px; opacity: 0.8; transition: all 0.3s ease; cursor: pointer;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加便签纸浮动效果
+        document.addEventListener('DOMContentLoaded', function () {
+            const noteCards = document.querySelectorAll('.note-card, .step-note, .stat-note');
+
+            noteCards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.5}s`;
+
+                card.addEventListener('mouseenter', function () {
+                    this.style.animationPlayState = 'paused';
+                    this.style.transform = 'rotate(0deg) scale(1.02)';
+                    this.style.zIndex = '10';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.animationPlayState = 'running';
+                    this.style.zIndex = '1';
+                });
+            });
+        });
+
+        // 图片加载优化
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('load', function () {
+                this.style.opacity = '1';
+            });
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
+        });
+
+        // Logo悬停效果
+        const logoLink = document.querySelector('a[href="https://llm-arena.kcores.com"]');
+        const logo = document.querySelector('img[alt="Kcores LLM Arena Logo"]');
+        if (logoLink && logo) {
+            logoLink.addEventListener('mouseenter', function () {
+                logo.style.opacity = '1';
+                logo.style.transform = 'scale(1.05)';
+            });
+
+            logoLink.addEventListener('mouseleave', function () {
+                logo.style.opacity = '0.8';
+                logo.style.transform = 'scale(1)';
+            });
+        }
+    </script>
+</body>
+
+</html>
+
