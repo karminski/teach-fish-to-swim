@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACE: Agentic Context Engineering - 读书笔记</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #e8eaed 0%, #f5f7fa 100%);
+            color: #1d1d1f;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 40px;
+        }
+
+        .card-wrapper {
+            position: relative;
+            width: 60vw;
+            max-width: 900px;
+            height: 80vh;
+            max-height: 1200px;
+            aspect-ratio: 3/4;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 60px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card.active {
+            opacity: 1;
+            transform: translateX(0);
+            z-index: 10;
+        }
+
+        .card.prev {
+            opacity: 0;
+            transform: translateX(-100px);
+        }
+
+        .card-header {
+            margin-bottom: 40px;
+        }
+
+        .card-title {
+            font-size: 2.8em;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 16px;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .card-subtitle {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #424245;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .card-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 1.15em;
+            line-height: 1.6;
+            color: #515154;
+            padding-right: 10px;
+        }
+
+        .card-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .card-content::-webkit-scrollbar-thumb {
+            background: #d1d1d6;
+            border-radius: 3px;
+        }
+
+        .card-content p {
+            margin-bottom: 20px;
+        }
+
+        .card-content ul, .card-content ol {
+            margin-left: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-content li {
+            margin-bottom: 12px;
+        }
+
+        .card-content strong {
+            color: #1d1d1f;
+            font-weight: 600;
+        }
+
+        .card-content code {
+            background: #f5f5f7;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .card-content pre {
+            background: #f5f5f7;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 16px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .comparison-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.95em;
+        }
+
+        .comparison-table th {
+            background: #f5f5f7;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .comparison-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e8eaed;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .stat-card {
+            background: #f5f5f7;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 12px 0;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #86868b;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        .page-indicator {
+            font-size: 1em;
+            color: #86868b;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 20px;
+            border-radius: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            color: #1d1d1f;
+            font-size: 20px;
+        }
+
+        .nav-btn:hover {
+            background: white;
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .emoji {
+            font-size: 1.2em;
+            margin: 0 4px;
+        }
+
+        .vs-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 24px 0;
+            gap: 20px;
+        }
+
+        .vs-item {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .vs-item.good {
+            background: rgba(52, 199, 89, 0.1);
+        }
+
+        .vs-item.bad {
+            background: rgba(255, 59, 48, 0.1);
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .keyword-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 0.85em;
+            margin: 4px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 1200px) {
+            .card-wrapper {
+                width: 70vw;
+            }
+            
+            .card {
+                padding: 40px;
+            }
+
+            .card-title {
+                font-size: 2.2em;
+            }
+
+            .card-subtitle {
+                font-size: 1.5em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card-wrapper {
+                width: 90vw;
+            }
+
+            .card {
+                padding: 30px;
+            }
+
+            .card-title {
+                font-size: 1.8em;
+            }
+
+            .card-subtitle {
+                font-size: 1.2em;
+            }
+
+            .card-content {
+                font-size: 1em;
+            }
+
+            .controls {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card-wrapper" id="cardWrapper">
+            <!-- Card 1: Title -->
+            <div class="card active" data-card="1">
+                <div class="card-header">
+                    <div class="card-title">ACE: Agentic Context Engineering</div>
+                </div>
+                <div class="card-content">
+                    <div class="highlight-box">
+                        <p style="margin: 0; font-size: 1.2em;">将上下文视为演化的"战术手册"而非简单压缩</p>
+                    </div>
+                    <div style="margin-top: 40px;">
+                        <div class="stat-card">
+                            <div class="stat-value">+10.6%</div>
+                            <div class="stat-label">智能体任务性能提升</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">+8.6%</div>
+                            <div class="stat-label">领域专用任务提升</div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 40px; font-size: 1.1em; color: #86868b; text-align: center;">
+                        解决简洁性偏差与上下文坍缩两大痛点
+                    </p>
+                </div>
+            </div>
+
+            <!-- Card 2: What is Context Adaptation -->
+            <div class="card" data-card="2">
+                <div class="card-header">
+                    <div class="card-subtitle">什么是上下文适应？</div>
+                </div>
+                <div class="card-content">
+                    <p><strong>在不修改模型权重的情况下，通过优化输入来提升性能</strong></p>
+                    
+                    <p style="margin-top: 30px; font-size: 1.3em; color: #667eea;">三大组成部分：</p>
+                    <ul>
+                        <li><strong>系统提示词</strong>：指导下游任务的核心指令</li>
+                        <li><strong>记忆</strong>：携带过去的事实和经验</li>
+                        <li><strong>事实证据</strong>：减少幻觉，补充知识</li>
+                    </ul>
+
+                    <p style="margin-top: 30px; font-size: 1.3em; color: #667eea;">三大优势：</p>
+                    <ul>
+                        <li><strong>可解释性强</strong> - 用户和开发者能直接理解</li>
+                        <li><strong>快速集成知识</strong> - 运行时即可加入新信息</li>
+                        <li><strong>跨模型共享</strong> - 可在复合系统中复用</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Card 3: Problem 1 - Brevity Bias -->
+            <div class="card" data-card="3">
+                <div class="card-header">
+                    <div class="card-subtitle">现有方法的问题（1）</div>
+                    <div style="font-size: 1.5em; color: #ff3b30; margin-top: 12px;">简洁性偏差 <span class="emoji">❌</span></div>
+                </div>
+                <div class="card-content">
+                    <p><strong>许多提示词优化器追求简洁、通用的指令</strong></p>
+                    
+                    <div class="vs-row" style="margin-top: 30px;">
+                        <div class="vs-item bad">
+                            <div style="font-size: 2em; margin-bottom: 12px;">❌</div>
+                            <div><strong>抽象化会丢失</strong></div>
+                            <ul style="text-align: left; margin-top: 16px; font-size: 0.95em;">
+                                <li>领域特定的启发式规则</li>
+                                <li>工具使用指南</li>
+                                <li>常见失败模式</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="highlight-box" style="margin-top: 30px;">
+                        <p style="margin: 0;"><strong>关键洞察：</strong>LLM 不像人类需要简洁总结，它们更擅长从详细的长上下文中自主提取相关性</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Problem 2 - Context Collapse -->
+            <div class="card" data-card="4">
+                <div class="card-header">
+                    <div class="card-subtitle">现有方法的问题（2）</div>
+                    <div style="font-size: 1.5em; color: #ff3b30; margin-top: 12px;">上下文坍缩 <span class="emoji">❌</span></div>
+                </div>
+                <div class="card-content">
+                    <p><strong>依赖 LLM 整体重写上下文的方法会逐渐退化</strong></p>
+                    
+                    <div style="margin-top: 30px;">
+                        <div style="background: #fff5f5; padding: 20px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid #ff3b30;">
+                            <strong>每次迭代都会压缩信息</strong>
+                        </div>
+                        <div style="background: #fff5f5; padding: 20px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid #ff3b30;">
+                            <strong>随时间推移，上下文变得更短、更不详细</strong>
+                        </div>
+                        <div style="background: #fff5f5; padding: 20px; border-radius: 12px; border-left: 4px solid #ff3b30;">
+                            <strong>导致性能急剧下降</strong>
+                        </div>
+                    </div>
+
+                    <img src="./assets/images/context-collapse.png" alt="上下文坍缩问题" style="margin-top: 30px;">
+                </div>
+            </div>
+
+            <!-- Card 5: ACE Solution Overview -->
+            <div class="card" data-card="5">
+                <div class="card-header">
+                    <div class="card-subtitle">ACE 的解决方案</div>
+                    <div style="font-size: 1.5em; color: #34c759; margin-top: 12px;">演化的综合战术手册 <span class="emoji">✅</span></div>
+                </div>
+                <div class="card-content">
+                    <img src="./assets/images/The-ACE-Framework.png" alt="ACE 框架" style="margin-bottom: 30px;">
+                    
+                    <div style="font-size: 1.3em; color: #667eea; margin-bottom: 20px;">三个协同模块：</div>
+                    
+                    <div class="stat-card">
+                        <div style="font-size: 1.3em; font-weight: 600; color: #1d1d1f; margin-bottom: 8px;">Generator 生成器</div>
+                        <div>生成候选经验和原始轨迹</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div style="font-size: 1.3em; font-weight: 600; color: #1d1d1f; margin-bottom: 8px;">Reflector 反思器</div>
+                        <div>提取结构化见解和策略模式</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div style="font-size: 1.3em; font-weight: 600; color: #1d1d1f; margin-bottom: 8px;">Curator 策展器</div>
+                        <div>增量更新、去重合并、分类组织</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 6: Generator -->
+            <div class="card" data-card="6">
+                <div class="card-header">
+                    <div class="card-subtitle">Generator 生成器</div>
+                </div>
+                <div class="card-content">
+                    <p><strong>负责生成候选经验</strong></p>
+                    
+                    <div style="margin-top: 30px;">
+                        <div style="background: #f5f5f7; padding: 24px; border-radius: 12px; margin-bottom: 16px;">
+                            <div style="font-weight: 600; margin-bottom: 12px; color: #667eea;">📦 离线场景</div>
+                            <div>并行执行多个任务实例</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 24px; border-radius: 12px;">
+                            <div style="font-weight: 600; margin-bottom: 12px; color: #667eea;">🔄 在线场景</div>
+                            <div>从实时执行中捕获经验</div>
+                        </div>
+                    </div>
+
+                    <pre style="margin-top: 30px;">for task in task_pool:
+    trajectory = execute_task(task, current_context)
+    raw_experiences.append(trajectory)</pre>
+
+                    <p style="margin-top: 20px;">生成原始轨迹、工具调用、推理过程</p>
+                </div>
+            </div>
+
+            <!-- Card 7: Reflector -->
+            <div class="card" data-card="7">
+                <div class="card-header">
+                    <div class="card-subtitle">Reflector 反思器</div>
+                    <div style="font-size: 1.2em; color: #667eea; margin-top: 12px;">关键创新：结构化扩展而非压缩</div>
+                </div>
+                <div class="card-content">
+                    <p><strong>从经验中提取结构化见解</strong></p>
+                    
+                    <ul style="margin-top: 30px; font-size: 1.1em;">
+                        <li>分析成功和失败案例</li>
+                        <li>识别可复用的策略模式</li>
+                        <li>提取领域特定的启发式规则</li>
+                        <li>生成多粒度的策略条目</li>
+                    </ul>
+
+                    <div style="background: #f5f5f7; padding: 24px; border-radius: 12px; margin-top: 30px;">
+                        <div style="font-weight: 600; margin-bottom: 16px; font-size: 1.1em;">输出多层次策略：</div>
+                        <div style="margin-bottom: 12px;">🎯 具体案例：当遇到日期解析错误时，尝试 ISO 8601 格式</div>
+                        <div style="margin-bottom: 12px;">🎯 中层模式：工具调用失败后，检查参数类型</div>
+                        <div>🎯 抽象原则：优先处理边界条件</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 8: Curator -->
+            <div class="card" data-card="8">
+                <div class="card-header">
+                    <div class="card-subtitle">Curator 策展器</div>
+                    <div style="font-size: 1.2em; color: #667eea; margin-top: 12px;">核心机制：增量差异更新</div>
+                </div>
+                <div class="card-content">
+                    <p><strong>管理和组织策略库</strong></p>
+                    
+                    <div style="margin-top: 30px;">
+                        <div style="background: rgba(52, 199, 89, 0.1); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+                            <strong>✅ 增量更新</strong>：只添加新见解，不删除旧内容
+                        </div>
+                        <div style="background: rgba(52, 199, 89, 0.1); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+                            <strong>✅ 去重合并</strong>：识别重复或冗余的策略
+                        </div>
+                        <div style="background: rgba(52, 199, 89, 0.1); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+                            <strong>✅ 分类组织</strong>：按主题、工具、任务类型分组
+                        </div>
+                        <div style="background: rgba(52, 199, 89, 0.1); padding: 20px; border-radius: 12px;">
+                            <strong>✅ 优先级排序</strong>：高频或高影响策略前置
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 9: Curator Code -->
+            <div class="card" data-card="9">
+                <div class="card-header">
+                    <div class="card-subtitle">Curator 增量更新机制</div>
+                </div>
+                <div class="card-content">
+                    <pre>def curate(current_context, new_insights):
+    # Step 1: Identify new content
+    novel_items = deduplicate(
+        new_insights, 
+        current_context
+    )
+    
+    # Step 2: Structured merge
+    updated_context = merge_with_structure(
+        current_context, 
+        novel_items,
+        preserve_details=True  # Key: Preserve details
+    )
+    
+    # Step 3: Reorganize
+    return reorganize_by_category(updated_context)</pre>
+
+                    <div class="highlight-box" style="margin-top: 30px;">
+                        <p style="margin: 0;"><strong>关键：</strong>保留细节（preserve_details=True）</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 10: Grow and Refine -->
+            <div class="card" data-card="10">
+                <div class="card-header">
+                    <div class="card-subtitle">核心创新</div>
+                    <div style="font-size: 1.5em; color: #667eea; margin-top: 12px;">Grow-and-Refine 原则</div>
+                </div>
+                <div class="card-content">
+                    <p style="font-size: 1.2em; margin-bottom: 30px;"><strong>成长与精炼，而非压缩与删除</strong></p>
+                    
+                    <div class="vs-row">
+                        <div class="vs-item bad">
+                            <div style="font-size: 2em; margin-bottom: 12px;">❌</div>
+                            <div style="font-weight: 600; margin-bottom: 16px;">传统方法</div>
+                            <div style="font-size: 0.95em; text-align: left;">
+                                <div style="margin-bottom: 8px;">• 每次替换整个上下文</div>
+                                <div style="margin-bottom: 8px;">• 追求简洁性</div>
+                                <div style="margin-bottom: 8px;">• 单次 LLM 调用重写</div>
+                                <div>• 容易信息丢失</div>
+                            </div>
+                        </div>
+                        
+                        <div class="vs-item good">
+                            <div style="font-size: 2em; margin-bottom: 12px;">✅</div>
+                            <div style="font-weight: 600; margin-bottom: 16px;">ACE 方法</div>
+                            <div style="font-size: 0.95em; text-align: left;">
+                                <div style="margin-bottom: 8px;">• 增量添加新策略</div>
+                                <div style="margin-bottom: 8px;">• 追求全面性</div>
+                                <div style="margin-bottom: 8px;">• 模块化流程</div>
+                                <div>• 保留历史见解</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 11: Structure Example -->
+            <div class="card" data-card="11">
+                <div class="card-header">
+                    <div class="card-subtitle">结构化上下文组织</div>
+                </div>
+                <div class="card-content">
+                    <p><strong>ACE 生成的上下文采用层次化结构</strong></p>
+                    
+                    <pre style="margin-top: 30px;">## Category: Tool Usage
+### API Calling
+- Specific: For `search_user` API, 
+  always include `exact_match=True` 
+  for email queries
+- General: Validate all API parameters 
+  before submission
+
+## Category: Error Handling  
+### Parsing Errors
+- When date parsing fails, try formats: 
+  ISO 8601 → US format → EU format
+- Log original error message for debugging</pre>
+
+                    <img src="./assets/images/example-ACE-Generated-Context-on-the-AppWorld-Benchmark.png" alt="ACE 生成的上下文示例" style="margin-top: 30px;">
+                </div>
+            </div>
+
+            <!-- Card 12: Multi-granularity Strategy -->
+            <div class="card" data-card="12">
+                <div class="card-header">
+                    <div class="card-subtitle">多粒度策略提取</div>
+                </div>
+                <div class="card-content">
+                    <p><strong>Reflector 生成三个层次的策略</strong></p>
+                    
+                    <div style="margin-top: 40px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.3em; font-weight: 600; margin-bottom: 12px;">1️⃣ 具体案例</div>
+                            <div>可直接复制的解决方案</div>
+                        </div>
+                        
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.3em; font-weight: 600; margin-bottom: 12px;">2️⃣ 中层模式</div>
+                            <div>可迁移的策略模板</div>
+                        </div>
+                        
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 16px;">
+                            <div style="font-size: 1.3em; font-weight: 600; margin-bottom: 12px;">3️⃣ 抽象原则</div>
+                            <div>高层次指导思想</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 13: Deduplication -->
+            <div class="card" data-card="13">
+                <div class="card-header">
+                    <div class="card-subtitle">去重与合并算法</div>
+                </div>
+                <div class="card-content">
+                    <p><strong>Curator 使用语义相似度识别重复</strong></p>
+                    
+                    <div style="margin-top: 40px;">
+                        <div style="background: #f5f5f7; padding: 30px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px; color: #667eea;">步骤 1</div>
+                            <div style="font-size: 1.1em;">嵌入式向量计算相似度</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 30px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px; color: #667eea;">步骤 2</div>
+                            <div style="font-size: 1.1em;">相似度 > 0.85 时合并</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 30px; border-radius: 16px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px; color: #667eea;">步骤 3</div>
+                            <div style="font-size: 1.1em;">保留更详细或更新的版本</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 14: Performance Results -->
+            <div class="card" data-card="14">
+                <div class="card-header">
+                    <div class="card-subtitle">实际效果</div>
+                    <div style="font-size: 1.3em; color: #667eea; margin-top: 12px;">智能体任务（AppWorld）</div>
+                </div>
+                <div class="card-content">
+                    <img src="./assets/images/overall-performance-results.png" alt="整体性能结果" style="margin-bottom: 30px;">
+                    
+                    <div class="stat-card">
+                        <div class="stat-value">+10.6%</div>
+                        <div class="stat-label">离线 ACE 相比最强基线</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value">24.7%</div>
+                        <div class="stat-label">在线 ACE 平均准确率</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value">+21.2%</div>
+                        <div class="stat-label">挑战集提升幅度</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 15: Performance Table -->
+            <div class="card" data-card="15">
+                <div class="card-header">
+                    <div class="card-subtitle">性能对比详情</div>
+                </div>
+                <div class="card-content">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>方法</th>
+                                <th>Normal-Test</th>
+                                <th>Challenge-Test</th>
+                                <th>Average</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Base LLM</td>
+                                <td>21.0%</td>
+                                <td>8.0%</td>
+                                <td>14.5%</td>
+                            </tr>
+                            <tr>
+                                <td>ICL</td>
+                                <td>23.5%</td>
+                                <td>9.5%</td>
+                                <td>16.5%</td>
+                            </tr>
+                            <tr>
+                                <td>MIPROv2</td>
+                                <td>25.8%</td>
+                                <td>11.2%</td>
+                                <td>18.5%</td>
+                            </tr>
+                            <tr>
+                                <td>GEPA</td>
+                                <td>26.5%</td>
+                                <td>10.8%</td>
+                                <td>18.7%</td>
+                            </tr>
+                            <tr>
+                                <td>Dynamic Cheatsheet</td>
+                                <td>28.2%</td>
+                                <td>12.5%</td>
+                                <td>20.4%</td>
+                            </tr>
+                            <tr style="background: rgba(102, 126, 234, 0.1); font-weight: 600;">
+                                <td><strong>ACE (离线)</strong></td>
+                                <td><strong>31.8%</strong></td>
+                                <td><strong>14.2%</strong></td>
+                                <td><strong>23.0%</strong></td>
+                            </tr>
+                            <tr style="background: rgba(102, 126, 234, 0.15); font-weight: 600;">
+                                <td><strong>ACE (在线)</strong></td>
+                                <td><strong>33.5%</strong></td>
+                                <td><strong>15.8%</strong></td>
+                                <td><strong>24.7%</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Card 16: Domain Tasks -->
+            <div class="card" data-card="16">
+                <div class="card-header">
+                    <div class="card-subtitle">领域专用任务</div>
+                    <div style="font-size: 1.3em; color: #667eea; margin-top: 12px;">FINER 金融基准</div>
+                </div>
+                <div class="card-content">
+                    <div style="margin-top: 40px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: #f5f5f7; padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+                            <div style="font-size: 1.1em;">Base LLM</div>
+                            <div style="font-size: 1.3em; font-weight: 600;">58.3%</div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: #f5f5f7; padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+                            <div style="font-size: 1.1em;">ICL</div>
+                            <div style="font-size: 1.3em; font-weight: 600;">61.7%</div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: #f5f5f7; padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+                            <div style="font-size: 1.1em;">GEPA</div>
+                            <div style="font-size: 1.3em; font-weight: 600;">63.2%</div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px;">
+                            <div style="font-size: 1.2em; font-weight: 600;">ACE</div>
+                            <div style="font-size: 1.6em; font-weight: 700;">68.9%</div>
+                        </div>
+                    </div>
+
+                    <div class="highlight-box" style="margin-top: 40px;">
+                        <p style="margin: 0; font-size: 1.1em;">相比基线提升 <strong>8.6%</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 17: Leaderboard -->
+            <div class="card" data-card="17">
+                <div class="card-header">
+                    <div class="card-subtitle">AppWorld 排行榜实战</div>
+                </div>
+                <div class="card-content">
+                    <p style="font-size: 1.2em; margin-bottom: 30px;"><strong>2025年9月官方排行榜</strong></p>
+                    
+                    <div style="background: #f5f5f7; padding: 30px; border-radius: 16px; margin-bottom: 20px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; color: #667eea; font-size: 1.1em;">ACE 配置</div>
+                        <div style="font-size: 1.05em;">使用开源小模型（Qwen-14B）</div>
+                    </div>
+                    
+                    <div style="background: rgba(52, 199, 89, 0.1); padding: 30px; border-radius: 16px; margin-bottom: 20px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 1.1em;">✅ 整体平均分</div>
+                        <div style="font-size: 1.05em;">匹敌排名第一的生产级智能体（使用闭源大模型）</div>
+                    </div>
+                    
+                    <div style="background: rgba(52, 199, 89, 0.1); padding: 30px; border-radius: 16px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 1.1em;">✅ Challenge-Test</div>
+                        <div style="font-size: 1.05em;">超越排名第一</div>
+                    </div>
+
+                    <div class="highlight-box" style="margin-top: 30px;">
+                        <p style="margin: 0; font-size: 1.1em;">好的上下文设计可以弥补模型能力差距</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 18: Efficiency -->
+            <div class="card" data-card="18">
+                <div class="card-header">
+                    <div class="card-subtitle">效率优势</div>
+                </div>
+                <div class="card-content">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>指标</th>
+                                <th>Dynamic Cheatsheet</th>
+                                <th>ACE</th>
+                                <th>提升</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>适应延迟</td>
+                                <td>12.3 秒/迭代</td>
+                                <td><strong>8.1 秒</strong></td>
+                                <td style="color: #34c759; font-weight: 600;">34% ↓</td>
+                            </tr>
+                            <tr>
+                                <td>推出成本</td>
+                                <td>$2.45</td>
+                                <td><strong>$1.67</strong></td>
+                                <td style="color: #34c759; font-weight: 600;">32% ↓</td>
+                            </tr>
+                            <tr>
+                                <td>上下文长度</td>
+                                <td>1,200 tokens</td>
+                                <td><strong>2,800 tokens</strong></td>
+                                <td style="color: #667eea; font-weight: 600;">133% ↑</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="highlight-box" style="margin-top: 40px;">
+                        <p style="margin-bottom: 12px; font-size: 1.1em;"><strong>关键洞察：</strong></p>
+                        <ul style="margin: 0;">
+                            <li>虽然上下文更长，但通过 KV cache 复用，成本更低</li>
+                            <li>模块化设计减少不必要的 LLM 调用</li>
+                            <li><strong>长上下文 ≠ 高成本</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 19: Ablation Study -->
+            <div class="card" data-card="19">
+                <div class="card-header">
+                    <div class="card-subtitle">消融实验</div>
+                    <div style="font-size: 1.2em; color: #667eea; margin-top: 12px;">每个组件都重要吗？</div>
+                </div>
+                <div class="card-content">
+                    <div style="margin-top: 30px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-size: 1.2em; font-weight: 600;">完整 ACE</div>
+                                <div style="font-size: 1.6em; font-weight: 700;">24.7%</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #fff5f5; padding: 24px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid #ff3b30;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-size: 1.05em;">移除 Incremental Updates</div>
+                                <div style="font-size: 1.3em; font-weight: 600;">19.3% <span style="color: #ff3b30; font-size: 0.8em;">(-5.4%)</span></div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #fff5f5; padding: 24px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid #ff3b30;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-size: 1.05em;">移除结构化组织</div>
+                                <div style="font-size: 1.3em; font-weight: 600;">21.5% <span style="color: #ff3b30; font-size: 0.8em;">(-3.2%)</span></div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #fff5f5; padding: 24px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid #ff3b30;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-size: 1.05em;">移除 Reflector</div>
+                                <div style="font-size: 1.3em; font-weight: 600;">18.8% <span style="color: #ff3b30; font-size: 0.8em;">(-5.9%)</span></div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #fff5f5; padding: 24px; border-radius: 12px; border-left: 4px solid #ff3b30;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-size: 1.05em;">移除 Curator</div>
+                                <div style="font-size: 1.3em; font-weight: 600;">22.1% <span style="color: #ff3b30; font-size: 0.8em;">(-2.6%)</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 20: Architecture Summary -->
+            <div class="card" data-card="20">
+                <div class="card-header">
+                    <div class="card-subtitle">技术架构总结</div>
+                </div>
+                <div class="card-content">
+                    <div class="vs-row">
+                        <div class="vs-item bad">
+                            <div style="font-size: 1.8em; margin-bottom: 12px;">❌</div>
+                            <div style="font-weight: 600; margin-bottom: 16px; font-size: 1.1em;">传统方法</div>
+                            <pre style="text-align: left; font-size: 0.8em; padding: 16px;">[任务执行]
+    ↓
+[LLM一次性重写]
+    ↓
+[压缩上下文]
+    ↓
+信息丢失 + 简洁性偏差</pre>
+                        </div>
+                        
+                        <div class="vs-item good">
+                            <div style="font-size: 1.8em; margin-bottom: 12px;">✅</div>
+                            <div style="font-weight: 600; margin-bottom: 16px; font-size: 1.1em;">ACE 方法</div>
+                            <pre style="text-align: left; font-size: 0.8em; padding: 16px;">[任务执行]
+    ↓
+[Reflector提取见解]
+    ↓
+[Curator增量合并]
+    ↓
+详细战术手册 + 防止坍缩</pre>
+                        </div>
+                    </div>
+
+                    <div class="highlight-box" style="margin-top: 30px;">
+                        <p style="margin: 0; font-size: 1.2em; font-weight: 600;">设计哲学：上下文应该是知识库，而非摘要</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 21: Core Advantages -->
+            <div class="card" data-card="21">
+                <div class="card-header">
+                    <div class="card-subtitle">核心优势</div>
+                </div>
+                <div class="card-content">
+                    <div style="margin-top: 20px;">
+                        <div style="background: rgba(102, 126, 234, 0.1); padding: 24px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 8px; color: #667eea;">1. 全面性</div>
+                            <div style="font-size: 1.05em;">保留详细的领域知识和策略</div>
+                        </div>
+                        
+                        <div style="background: rgba(102, 126, 234, 0.1); padding: 24px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 8px; color: #667eea;">2. 演化性</div>
+                            <div style="font-size: 1.05em;">持续积累经验而不丢失历史</div>
+                        </div>
+                        
+                        <div style="background: rgba(102, 126, 234, 0.1); padding: 24px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 8px; color: #667eea;">3. 结构化</div>
+                            <div style="font-size: 1.05em;">分类组织，易于检索和使用</div>
+                        </div>
+                        
+                        <div style="background: rgba(102, 126, 234, 0.1); padding: 24px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 8px; color: #667eea;">4. 高效性</div>
+                            <div style="font-size: 1.05em;">模块化设计降低延迟和成本</div>
+                        </div>
+                        
+                        <div style="background: rgba(102, 126, 234, 0.1); padding: 24px; border-radius: 16px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 8px; color: #667eea;">5. 通用性</div>
+                            <div style="font-size: 1.05em;">适用于离线和在线场景</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 22: Use Cases -->
+            <div class="card" data-card="22">
+                <div class="card-header">
+                    <div class="card-subtitle">适用场景</div>
+                </div>
+                <div class="card-content">
+                    <div style="margin-top: 20px;">
+                        <div style="background: #f5f5f7; padding: 24px; border-radius: 16px; margin-bottom: 16px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px;">🤖 多步推理智能体</div>
+                            <div style="font-size: 0.95em; color: #86868b;">工具调用密集、环境交互复杂</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 24px; border-radius: 16px; margin-bottom: 16px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px;">💼 领域专用应用</div>
+                            <div style="font-size: 0.95em; color: #86868b;">金融、法律、医疗、科学研究</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 24px; border-radius: 16px; margin-bottom: 16px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px;">⏱️ 长期运行系统</div>
+                            <div style="font-size: 0.95em; color: #86868b;">客服机器人、个人助理</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 24px; border-radius: 16px; margin-bottom: 16px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px;">💡 资源受限场景</div>
+                            <div style="font-size: 0.95em; color: #86868b;">小模型 + 好上下文 > 大模型 + 差上下文</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 24px; border-radius: 16px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px;">📚 无监督学习</div>
+                            <div style="font-size: 0.95em; color: #86868b;">没有标注数据，利用自然执行反馈</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 23: Implementation -->
+            <div class="card" data-card="23">
+                <div class="card-header">
+                    <div class="card-subtitle">实现建议</div>
+                </div>
+                <div class="card-content">
+                    <div style="font-size: 1.3em; color: #667eea; margin-bottom: 20px; font-weight: 600;">模块选择</div>
+                    <ul style="margin-bottom: 30px; font-size: 1.05em;">
+                        <li><strong>Reflector</strong>：使用强推理模型（GPT-4、Claude）</li>
+                        <li><strong>Generator</strong>：可用较小模型执行任务</li>
+                        <li><strong>Curator</strong>：使用嵌入模型做相似度计算</li>
+                    </ul>
+
+                    <div style="font-size: 1.3em; color: #667eea; margin-bottom: 20px; font-weight: 600;">超参数</div>
+                    <ul style="font-size: 1.05em;">
+                        <li><strong>反思频率</strong>：每 5-10 个任务实例反思一次</li>
+                        <li><strong>去重阈值</strong>：语义相似度 0.85</li>
+                        <li><strong>上下文长度</strong>：充分利用模型的上下文窗口（32K+）</li>
+                        <li><strong>分类数量</strong>：5-10 个主要类别</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Card 24: Engineering Optimization -->
+            <div class="card" data-card="24">
+                <div class="card-header">
+                    <div class="card-subtitle">工程优化</div>
+                </div>
+                <div class="card-content">
+                    <div style="margin-top: 30px;">
+                        <div style="background: rgba(102, 126, 234, 0.1); padding: 30px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px; color: #667eea;">KV Cache 复用</div>
+                            <div style="font-size: 1.05em;">缓存固定的上下文前缀</div>
+                        </div>
+                        
+                        <div style="background: rgba(102, 126, 234, 0.1); padding: 30px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px; color: #667eea;">并行生成</div>
+                            <div style="font-size: 1.05em;">Generator 可并行执行多个任务</div>
+                        </div>
+                        
+                        <div style="background: rgba(102, 126, 234, 0.1); padding: 30px; border-radius: 16px;">
+                            <div style="font-size: 1.2em; font-weight: 600; margin-bottom: 12px; color: #667eea;">异步更新</div>
+                            <div style="font-size: 1.05em;">Curator 可离线更新上下文</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #f5f5f7; padding: 24px; border-radius: 16px; margin-top: 40px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 1.1em;">与其他方法结合</div>
+                        <div style="font-size: 1.05em; margin-bottom: 8px;">• 与 RAG 结合：上下文 = 静态策略 + 动态检索</div>
+                        <div style="font-size: 1.05em;">• 与微调结合：上下文补充模型能力不足</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 25: Key Insights 1 -->
+            <div class="card" data-card="25">
+                <div class="card-header">
+                    <div class="card-subtitle">关键启示（1/2）</div>
+                </div>
+                <div class="card-content">
+                    <div style="margin-top: 30px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 32px; border-radius: 16px; margin-bottom: 30px;">
+                            <div style="font-size: 1.3em; font-weight: 600; margin-bottom: 16px;">1. 上下文设计的范式转变</div>
+                            <div class="vs-row" style="gap: 0; margin: 0;">
+                                <div style="flex: 1; text-align: left;">
+                                    <div style="margin-bottom: 12px; opacity: 0.8;">❌ 传统观念</div>
+                                    <div style="font-size: 1.1em;">上下文应该简洁</div>
+                                </div>
+                                <div style="flex: 1; text-align: left;">
+                                    <div style="margin-bottom: 12px;">✅ ACE 观念</div>
+                                    <div style="font-size: 1.1em; font-weight: 600;">上下文应该全面<br>LLM 会自己挑选</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 32px; border-radius: 16px;">
+                            <div style="font-size: 1.3em; font-weight: 600; margin-bottom: 16px;">2. 长上下文的正确用法</div>
+                            <div style="font-size: 1.1em; line-height: 1.6;">
+                                长上下文 LLM 的价值不是"读更多文档"，<br>而是"维护更详细的战术手册"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 26: Key Insights 2 -->
+            <div class="card" data-card="26">
+                <div class="card-header">
+                    <div class="card-subtitle">关键启示（2/2）</div>
+                </div>
+                <div class="card-content">
+                    <div style="margin-top: 30px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 32px; border-radius: 16px; margin-bottom: 30px;">
+                            <div style="font-size: 1.3em; font-weight: 600; margin-bottom: 16px;">3. 增量学习的重要性</div>
+                            <div style="font-size: 1.15em; line-height: 1.6;">
+                                在 LLM 系统中，<br><strong style="font-size: 1.2em;">增量更新 > 整体重写</strong><br>这是防止信息丢失的关键
+                            </div>
+                        </div>
+
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 32px; border-radius: 16px;">
+                            <div style="font-size: 1.3em; font-weight: 600; margin-bottom: 16px;">4. 模块化的力量</div>
+                            <div style="font-size: 1.1em; line-height: 1.6;">
+                                将复杂任务拆解为<br><strong>Generator - Reflector - Curator</strong><br>三个模块，每个模块职责清晰、可独立优化
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 27: Paper Info -->
+            <div class="card" data-card="27">
+                <div class="card-header">
+                    <div class="card-subtitle">论文信息</div>
+                </div>
+                <div class="card-content">
+                    <div style="margin-top: 30px;">
+                        <div style="background: #f5f5f7; padding: 30px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-weight: 600; margin-bottom: 12px; color: #667eea; font-size: 1.1em;">作者</div>
+                            <div style="font-size: 1.05em;">Qizheng Zhang, Changran Hu et al.</div>
+                            <div style="font-size: 0.95em; color: #86868b; margin-top: 8px;">Stanford University, SambaNova Systems</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 30px; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-weight: 600; margin-bottom: 12px; color: #667eea; font-size: 1.1em;">发表时间</div>
+                            <div style="font-size: 1.05em;">2025年</div>
+                        </div>
+                        
+                        <div style="background: #f5f5f7; padding: 30px; border-radius: 16px; margin-bottom: 30px;">
+                            <div style="font-weight: 600; margin-bottom: 16px; color: #667eea; font-size: 1.1em;">关键词</div>
+                            <div>
+                                <span class="keyword-badge">Context Adaptation</span>
+                                <span class="keyword-badge">LLM Agents</span>
+                                <span class="keyword-badge">Self-Improvement</span>
+                                <span class="keyword-badge">Memory Systems</span>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <a href="https://arxiv.org/html/2510.04618v1" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; border-radius: 24px; text-decoration: none; font-weight: 600; font-size: 1.1em; margin-right: 16px;">📄 论文原文</a>
+                            <a href="https://appworld.dev/" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; border-radius: 24px; text-decoration: none; font-weight: 600; font-size: 1.1em;">🌐 AppWorld</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="controls">
+            <button class="nav-btn" id="prevBtn" onclick="prevCard()">
+                <span>←</span>
+            </button>
+            <div class="page-indicator">
+                <span id="currentPage">1</span> / <span id="totalPages">27</span>
+            </div>
+            <button class="nav-btn" id="nextBtn" onclick="nextCard()">
+                <span>→</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentCard = 1;
+        const totalCards = 27;
+
+        function showCard(cardNumber) {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.classList.remove('active', 'prev');
+                if (index + 1 === cardNumber) {
+                    card.classList.add('active');
+                } else if (index + 1 < cardNumber) {
+                    card.classList.add('prev');
+                }
+            });
+
+            currentCard = cardNumber;
+            document.getElementById('currentPage').textContent = currentCard;
+            
+            // Update button states
+            document.getElementById('prevBtn').disabled = currentCard === 1;
+            document.getElementById('nextBtn').disabled = currentCard === totalCards;
+        }
+
+        function nextCard() {
+            if (currentCard < totalCards) {
+                showCard(currentCard + 1);
+            }
+        }
+
+        function prevCard() {
+            if (currentCard > 1) {
+                showCard(currentCard - 1);
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            // Ctrl + Arrow keys
+            if (e.ctrlKey) {
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextCard();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prevCard();
+                }
+            }
+            // Also support arrow keys without Ctrl
+            else if (e.key === 'ArrowRight') {
+                nextCard();
+            } else if (e.key === 'ArrowLeft') {
+                prevCard();
+            }
+        });
+
+        // Initialize
+        document.getElementById('totalPages').textContent = totalCards;
+        showCard(1);
+    </script>
+</body>
+</html>
