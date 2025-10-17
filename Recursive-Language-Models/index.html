@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>递归语言模型 (RLM) - 让模型决定如何处理海量上下文</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c2c2c;
+            background: linear-gradient(135deg, #f0f2f5 0%, #dde1e7 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #007aff, #5856d6, #af52de, #ff2d92);
+        }
+
+        .card-content {
+            padding: 50px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 便签笔记样式 */
+        .note-section {
+            margin-bottom: 40px;
+        }
+
+        .note-card {
+            background: #fff9e6;
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .note-card:nth-child(even) {
+            background: #f0f8ff;
+            border-color: #87ceeb;
+            box-shadow: 0 4px 12px rgba(135, 206, 235, 0.2);
+            transform: rotate(0.5deg);
+        }
+
+        .note-card:nth-child(3n) {
+            background: #f5fff5;
+            border-color: #90ee90;
+            box-shadow: 0 4px 12px rgba(144, 238, 144, 0.2);
+            transform: rotate(-0.3deg);
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '📝';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 24px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-title::before {
+            content: '•';
+            color: #007aff;
+            font-size: 24px;
+        }
+
+        .note-content {
+            color: #444;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .note-content ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .note-content li {
+            margin: 5px 0;
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* 图片区域样式 */
+        .image-section {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .image-caption {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+            padding: 0 20px;
+        }
+
+        /* 性能数据网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-note {
+            background: #fff0f5;
+            border: 2px solid #ff69b4;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-note:nth-child(even) {
+            transform: rotate(1deg);
+        }
+
+        .stat-note:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ff1493;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* 技术步骤 */
+        .tech-steps {
+            margin: 40px 0;
+        }
+
+        .step-note {
+            background: #f0fff0;
+            border: 2px solid #32cd32;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+            transform: rotate(0.3deg);
+        }
+
+        .step-note:nth-child(even) {
+            background: #fff8dc;
+            border-color: #daa520;
+            transform: rotate(-0.3deg);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #32cd32;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .step-note:nth-child(even) .step-number {
+            background: #daa520;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #2c2c2c;
+            margin-left: 15px;
+        }
+
+        .step-content {
+            color: #444;
+            line-height: 1.6;
+            margin-left: 15px;
+        }
+
+        /* 对比表格样式 */
+        .comparison-table {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 700;
+            color: #2c2c2c;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-content {
+                padding: 30px 25px;
+            }
+
+            .title {
+                font-size: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .note-card {
+                padding: 20px;
+                transform: rotate(0deg);
+            }
+
+            .note-card:hover {
+                transform: scale(1.02);
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes noteFloat {
+            0% {
+                transform: translateY(0px) rotate(-0.5deg);
+            }
+
+            50% {
+                transform: translateY(-5px) rotate(0.5deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(-0.5deg);
+            }
+        }
+
+        .note-card {
+            animation: noteFloat 6s ease-in-out infinite;
+        }
+
+        .note-card:nth-child(even) {
+            animation-delay: 2s;
+        }
+
+        .note-card:nth-child(3n) {
+            animation-delay: 4s;
+        }
+
+        /* 代码样式 */
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #e83e8c;
+        }
+
+        .section-divider {
+            text-align: center;
+            margin: 50px 0 40px 0;
+        }
+
+        .section-divider h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c2c2c;
+            position: relative;
+            display: inline-block;
+            padding: 0 20px;
+        }
+
+        .section-divider h2::before,
+        .section-divider h2::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #007aff);
+        }
+
+        .section-divider h2::before {
+            right: 100%;
+            margin-right: 10px;
+        }
+
+        .section-divider h2::after {
+            left: 100%;
+            margin-left: 10px;
+            background: linear-gradient(90deg, #007aff, transparent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-card">
+        <div class="card-content">
+            <!-- 标题区域 -->
+            <div class="header-section">
+                <h1 class="title">Recursive Language Models</h1>
+                <p class="subtitle">递归语言模型 - 让模型决定如何处理海量上下文</p>
+                <p class="description">
+                    RLM提出了一种革命性的推理策略：<span class="highlight">让语言模型递归地调用自己</span>来处理几乎无限长度的上下文。
+                    RLM(GPT-5-mini)的表现<span class="highlight">超越了GPT-5本身</span>，
+                    在最困难的长上下文基准测试中，正确答案数量是后者的<span class="highlight">两倍多</span>，
+                    同时成本更低，且即使处理10M+ tokens也不会性能退化。
+                </p>
+            </div>
+
+            <!-- 核心突破 -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">2×+</div>
+                    <div class="stat-label">性能提升倍数</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">更低</div>
+                    <div class="stat-label">查询成本</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">10M+</div>
+                    <div class="stat-label">tokens无退化</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">无限</div>
+                    <div class="stat-label">上下文长度</div>
+                </div>
+            </div>
+
+            <!-- RLM调用示例图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/An%20example%20of%20a%20recursive%20language%20model%20(RLM)%20call.png"
+                        alt="RLM调用示例">
+                </div>
+                <div class="image-caption">
+                    递归语言模型调用示例 - 展示RLM如何递归处理长上下文
+                </div>
+            </div>
+
+            <!-- 问题背景 -->
+            <div class="section-divider">
+                <h2>🔍 问题背景</h2>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">什么是"Context Rot"（上下文腐烂）？</div>
+                    <div class="note-content">
+                        Anthropic将"context rot"定义为：<span class="highlight">随着上下文窗口中的token数量增加，
+                        模型从上下文中准确召回信息的能力会下降</span>。但有趣的是，在RULER等"大海捞针"基准测试中，
+                        大多数前沿模型表现出色（90%+准确率），但在实际使用中（如长时间对话），模型似乎会"变笨"。
+                        这是一个<span class="highlight">人人都知道但难以精确描述和基准测试的失效模式</span>。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">直觉的解决方案</div>
+                    <div class="note-content">
+                        "如果我把上下文分成两个模型调用，然后在第三个调用中合并它们，是不是就能避免这种退化问题？"
+                        <br><br>
+                        <span class="highlight">RLM正是基于这个直觉构建的。</span>
+                        通过递归分解上下文处理任务，让每个单独的模型调用都不需要处理巨大的上下文。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 核心概念 -->
+            <div class="section-divider">
+                <h2>💡 核心概念</h2>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">API层面的抽象</div>
+                    <div class="note-content">
+                        RLM是对语言模型的一层轻量封装，可以生成（递归的）中间计算调用。
+                        <span class="highlight">从用户或程序员的角度来看，它与普通模型调用完全一样</span>：
+                        <br><br>
+                        <code>rlm.completion(messages)</code> 替代 <code>gpt5.completion(messages)</code>
+                        <br><br>
+                        使用方式完全相同，但内部会智能地进行递归处理。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">以上下文为中心的视角</div>
+                    <div class="note-content">
+                        RLM采用<span class="highlight">以上下文为中心</span>而非<span class="highlight">以问题为中心</span>的输入分解方式：
+                        <ul>
+                            <li>只将<strong>查询(query)</strong>提供给根LM（深度=0的LM）</li>
+                            <li>将<strong>上下文(context)</strong>存储在<strong>环境(environment)</strong>中</li>
+                            <li>根LM可以与环境交互，递归地调用子LM</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RLM替代LM调用图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/A%20recursive%20language%20model%20call%20replaces%20a%20language%20model%20call.png"
+                        alt="RLM替代LM调用">
+                </div>
+                <div class="image-caption">
+                    递归语言模型调用替代传统语言模型调用 - API层面的对比
+                </div>
+            </div>
+
+            <!-- REPL环境 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">REPL环境：让LM与上下文互动</div>
+                    <div class="note-content">
+                        RLM选择了<span class="highlight">Python REPL Notebook</span>作为环境（类似Jupyter Notebook）：
+                        <ul>
+                            <li><strong>上下文作为变量</strong>：巨大的上下文被预加载为Python变量存储在内存中</li>
+                            <li><strong>灵活交互</strong>：根LM可以在REPL中编写和读取代码单元格的输出</li>
+                            <li><strong>递归调用</strong>：根LM可以像调用函数一样调用递归LM，对上下文进行查看、分区、grep搜索和启动子查询</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPL环境图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/RLM%20with%20a%20REPL%20environment.png"
+                        alt="REPL环境中的RLM">
+                </div>
+                <div class="image-caption">
+                    REPL环境中的递归语言模型 - 展示RLM如何与环境交互
+                </div>
+            </div>
+
+            <!-- 工作流程 -->
+            <div class="tech-steps">
+                <div class="step-note">
+                    <div class="step-number">1</div>
+                    <div class="step-title">交互</div>
+                    <div class="step-content">
+                        根LM输出代码块，接收执行结果（截断版本）。
+                        可以读取变量、执行计算、使用正则表达式搜索等。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">2</div>
+                    <div class="step-title">递归</div>
+                    <div class="step-content">
+                        根LM可以对存储在变量中的任何字符串启动递归LM调用（深度=1）。
+                        子LM可以进一步递归调用更深层的LM。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">3</div>
+                    <div class="step-title">输出答案</div>
+                    <div class="step-content">
+                        直接输出：<code>FINAL(answer)</code>
+                        <br>
+                        或使用环境变量：<code>FINAL_VAR(final_ans_var)</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 三大核心优势 -->
+            <div class="section-divider">
+                <h2>🚀 三大核心优势</h2>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">1. 根LM的上下文窗口很少阻塞</div>
+                    <div class="note-content">
+                        <span class="highlight">因为它从不直接看到整个上下文，输入上下文增长缓慢。</span>
+                        <br><br>
+                        <strong>传统方法</strong>：整个上下文 → 模型
+                        <br>
+                        <strong>RLM方法</strong>：查询 → 模型 ← 按需访问上下文片段
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">2. 灵活的上下文访问策略</div>
+                    <div class="note-content">
+                        根LM可以：
+                        <ul>
+                            <li>查看上下文的子集</li>
+                            <li>对上下文块进行朴素递归</li>
+                            <li>使用<code>regex</code>粗略缩小上下文范围</li>
+                            <li>对缩小后的上下文启动递归LM调用</li>
+                        </ul>
+                        <span class="highlight">特别适用于任意长上下文输入</span>——在运行时即时索引检索器成本高昂的场景！
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">3. 多模态潜力</div>
+                    <div class="note-content">
+                        理论上，上下文可以是<span class="highlight">任何能加载到内存中的模态</span>。
+                        根LM拥有完全控制权来查看和转换数据，并对其提出子查询。
+                        这为处理图像、音频、视频等多模态数据提供了可能。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">与测试时推理扩展的关系</div>
+                    <div class="note-content">
+                        RLM提供了<span class="highlight">另一个扩展测试时计算的维度</span>：
+                        <ul>
+                            <li>LM选择与上下文交互和递归的轨迹是<strong>完全可学习的</strong></li>
+                            <li>可以像当前训练推理能力一样进行强化学习</li>
+                            <li><strong>不需要直接训练处理巨大上下文的模型</strong>——因为任何单个LM调用都不需要处理巨大上下文</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 实验结果 -->
+            <div class="section-divider">
+                <h2>📊 实验结果</h2>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">OOLONG基准测试：翻倍的性能提升</div>
+                    <div class="note-content">
+                        在最困难的长上下文基准测试OOLONG上：
+                        <div class="comparison-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>模型</th>
+                                        <th>正确答案数</th>
+                                        <th>成本/查询</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>GPT-5</td>
+                                        <td>基准</td>
+                                        <td>更高</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>RLM(GPT-5-mini)</strong></td>
+                                        <td><strong>2倍+</strong></td>
+                                        <td><strong>更低</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <span class="highlight">使用更小、更便宜的模型，获得更好的结果！</span>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">BrowseComp-Plus深度研究任务</div>
+                    <div class="note-content">
+                        在这个新构建的长上下文深度研究任务上，RLM表现优于：
+                        <ul>
+                            <li>ReAct + 测试时索引</li>
+                            <li>提示检索方法</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">无退化特性</div>
+                    <div class="note-content">
+                        惊人发现：<span class="highlight">RLM在处理10M+ tokens时性能不会退化</span>
+                        <br><br>
+                        这验证了核心假设：通过将上下文管理委托给模型本身，可以规避传统长上下文的退化问题。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 实际应用模式 -->
+            <div class="section-divider">
+                <h2>🎯 实际应用模式</h2>
+            </div>
+
+            <div class="tech-steps">
+                <div class="step-note">
+                    <div class="step-number">1</div>
+                    <div class="step-title">自适应分区和递归</div>
+                    <div class="step-content">
+                        <strong>场景</strong>：在大量文档中查找多跳事实
+                        <br><br>
+                        <strong>RLM的做法</strong>：
+                        <ul>
+                            <li>使用regex粗略定位相关区域</li>
+                            <li>对这些区域启动递归LM调用</li>
+                            <li>合并结果，得出最终答案</li>
+                        </ul>
+                        <strong>优势</strong>：无需预先建立索引，运行时按需处理
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">2</div>
+                    <div class="step-title">一次性处理编程任务</div>
+                    <div class="step-content">
+                        <strong>场景</strong>：给定论文列表，生成所有BibTeX引用
+                        <br><br>
+                        <strong>传统LM的问题</strong>：输出太长容易出错，类似大型乘法问题，容易计算失误
+                        <br><br>
+                        <strong>RLM的解决方案</strong>：在REPL环境中编程处理，一次性正确完成任务，避免人工逐个处理的痛苦
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">3</div>
+                    <div class="step-title">LoCoDiff基准测试</div>
+                    <div class="step-content">
+                        <strong>任务</strong>：跟踪长达75k+ tokens的git diff历史，输出最终文件状态
+                        <br><br>
+                        <strong>GPT-5性能</strong>：&lt;10%成功率
+                        <br><br>
+                        <strong>RLM(GPT-5)表现</strong>：选择编程方式逐步处理diff序列，显著提高成功率，
+                        展示了将"应该是编程任务"的问题交给代码环境的威力
+                    </div>
+                </div>
+            </div>
+
+            <!-- 技术细节 -->
+            <div class="section-divider">
+                <h2>⚙️ 技术细节</h2>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">为什么选择REPL环境？</div>
+                    <div class="note-content">
+                        <strong>1. 提示作为Python变量</strong>
+                        <ul>
+                            <li>可以通过编程方式在任意REPL流程中处理</li>
+                            <li>LLM在测试时决定查看长上下文的哪些部分</li>
+                            <li>可以扩展任何决策（如自适应分块和递归方案）</li>
+                        </ul>
+                        <br>
+                        <strong>2. REPL环境中的递归LM调用</strong>
+                        <ul>
+                            <li>由选择(1)的分解和多功能性促成</li>
+                            <li>允许灵活的子查询策略</li>
+                            <li>受CodeAct设计启发，增强递归能力</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">RLMs vs. 其他方法</div>
+                    <div class="note-content">
+                        <strong>不同于Agent</strong>：
+                        <ul>
+                            <li><strong>Agent</strong>：基于人类/专家直觉分解问题，使其适合LM处理</li>
+                            <li><strong>RLMs</strong>：让LM自己决定如何分解问题</li>
+                        </ul>
+                        <br>
+                        <strong>不同于简单总结</strong>：
+                        <ul>
+                            <li><strong>总结方法</strong>：固定的上下文压缩策略</li>
+                            <li><strong>RLMs</strong>：动态、自适应的上下文管理，由模型决定</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 当前局限性 -->
+            <div class="section-divider">
+                <h2>⚠️ 当前局限性</h2>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">速度优化不足</div>
+                    <div class="note-content">
+                        实现未针对速度优化：
+                        <ul>
+                            <li>每个递归LM调用都是<strong>阻塞的</strong></li>
+                            <li>不利用任何<strong>前缀缓存</strong></li>
+                            <li>查询时间：几秒到几分钟不等</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">成本和运行时保证</div>
+                    <div class="note-content">
+                        <ul>
+                            <li>无法严格控制最大迭代次数带来的"思考时间"</li>
+                            <li>对总API成本没有强保证</li>
+                            <li>对总运行时间没有强保证</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">优化空间巨大</div>
+                    <div class="note-content">
+                        <span class="highlight">好消息：有大量低垂果实等待优化！</span>
+                        <ul>
+                            <li>异步调用</li>
+                            <li>前缀缓存</li>
+                            <li>硬件感知优化</li>
+                            <li>需要重新思考推理引擎设计</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 未来展望 -->
+            <div class="section-divider">
+                <h2>🔮 未来展望</h2>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">训练专用RLM</div>
+                    <div class="note-content">
+                        RLM的训练潜力巨大：
+                        <ul>
+                            <li><strong>固定格式的价值</strong>：CoT、ReAct、指令微调都表明，预测格式能显著提升性能</li>
+                            <li><strong>可学习的递归轨迹</strong>：如何与上下文交互、何时递归、如何分块——都可以学习</li>
+                            <li><strong>强化学习</strong>：效率、速度、性能都可以作为标量奖励优化</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">不需要解决Context Rot</div>
+                    <div class="note-content">
+                        <span class="highlight">核心洞察：RLM框架允许我们绕过而非解决context rot问题</span>
+                        <ul>
+                            <li>Context rot可能是训练分布不足导致的（长序列稀缺、高熵）</li>
+                            <li>RLM让任何单个LM调用都无需处理巨大上下文</li>
+                            <li>随着基础模型能力提升，RLM能力同步提升</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">下一个里程碑</div>
+                    <div class="note-content">
+                        作者认为RLM可能代表<span class="highlight">通用推理时扩展的下一个里程碑</span>：
+                        <ol>
+                            <li>✅ CoT风格推理模型</li>
+                            <li>✅ ReAct风格Agent模型</li>
+                            <li>🚀 <strong>显式训练递归推理的RLM</strong></li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">根本性赌注</div>
+                    <div class="note-content">
+                        <blockquote style="border-left: 4px solid #007aff; padding-left: 15px; margin: 15px 0; color: #555; font-style: italic;">
+                            "RLMs are a fundamentally different bet than modern agents. 
+                            Agents are designed based on human / expert intuition on how to break down a problem to be digestible for an LM. 
+                            RLMs are designed based on the principle that fundamentally, LMs should decide how to break down a problem to be digestible for an LM."
+                        </blockquote>
+                        <br>
+                        <strong>Agent</strong>：人类决定如何分解问题
+                        <br>
+                        <strong>RLM</strong>：语言模型决定如何分解问题
+                    </div>
+                </div>
+            </div>
+
+            <!-- 核心思想总结 -->
+            <div class="section-divider">
+                <h2>💎 核心思想总结</h2>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">五大核心要点</div>
+                    <div class="note-content">
+                        <ol>
+                            <li><strong>上下文作为变量</strong>：将海量上下文存储在环境中，而非直接塞给模型</li>
+                            <li><strong>递归分解</strong>：让模型自己决定如何查看、分割和递归处理上下文</li>
+                            <li><strong>REPL赋能</strong>：代码环境提供了灵活性和精确性</li>
+                            <li><strong>性能悖论</strong>：更小的模型+RLM框架 > 更大的模型</li>
+                            <li><strong>可扩展性</strong>：随着基础模型提升，RLM能力同步提升</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 参考信息 -->
+            <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                <p style="color: #666; font-size: 14px;">
+                    基于Alex Zhang和Omar Khattab的Recursive Language Models研究 |
+                    <a href="https://alexzhang13.github.io/blog/2025/rlm/"
+                        style="color: #007aff; text-decoration: none;">博客原文</a> |
+                    <a href="https://github.com/alexzhang13/rlm"
+                        style="color: #007aff; text-decoration: none;">GitHub代码</a>
+                </p>
+            </div>
+
+            <!-- Logo区域 -->
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px;">
+                <a href="https://llm-arena.kcores.com" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; text-decoration: none;">
+                    <img src="assets/images/kcores-llm-arena-logo-black.png" alt="Kcores LLM Arena Logo"
+                        style="max-height: 60px; opacity: 0.8; transition: all 0.3s ease; cursor: pointer;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加便签纸浮动效果
+        document.addEventListener('DOMContentLoaded', function () {
+            const noteCards = document.querySelectorAll('.note-card, .step-note, .stat-note');
+
+            noteCards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.5}s`;
+
+                card.addEventListener('mouseenter', function () {
+                    this.style.animationPlayState = 'paused';
+                    this.style.transform = 'rotate(0deg) scale(1.02)';
+                    this.style.zIndex = '10';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.animationPlayState = 'running';
+                    this.style.zIndex = '1';
+                });
+            });
+        });
+
+        // 图片加载优化
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('load', function () {
+                this.style.opacity = '1';
+            });
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
+        });
+
+        // Logo悬停效果
+        const logoLink = document.querySelector('a[href="https://llm-arena.kcores.com"]');
+        const logo = document.querySelector('img[alt="Kcores LLM Arena Logo"]');
+        if (logoLink && logo) {
+            logoLink.addEventListener('mouseenter', function () {
+                logo.style.opacity = '1';
+                logo.style.transform = 'scale(1.05)';
+            });
+
+            logoLink.addEventListener('mouseleave', function () {
+                logo.style.opacity = '0.8';
+                logo.style.transform = 'scale(1)';
+            });
+        }
+    </script>
+</body>
+
+</html>
+
