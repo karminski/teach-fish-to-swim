@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONERULER - 多语言长上下文基准测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #e8eaed 0%, #f5f5f7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #1d1d1f;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        /* 卡片容器 */
+        .card-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 3 / 4;
+            perspective: 1000px;
+        }
+
+        /* 卡片 */
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 60px;
+            display: none;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .card.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 卡片头部 */
+        .card-header {
+            margin-bottom: 40px;
+        }
+
+        .card-number {
+            font-size: 14px;
+            font-weight: 500;
+            color: #86868b;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 42px;
+            font-weight: 700;
+            color: #1d1d1f;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .card-subtitle {
+            font-size: 20px;
+            font-weight: 400;
+            color: #6e6e73;
+            line-height: 1.4;
+        }
+
+        /* 卡片内容 */
+        .card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 封面样式 */
+        .cover-card .card-title {
+            font-size: 56px;
+            text-align: center;
+            background: linear-gradient(135deg, #0071e3 0%, #00c7be 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 24px;
+        }
+
+        .cover-card .card-subtitle {
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .cover-card .authors {
+            text-align: center;
+            font-size: 16px;
+            color: #86868b;
+            margin-top: 24px;
+        }
+
+        .cover-card .conference {
+            text-align: center;
+            font-size: 14px;
+            color: #0071e3;
+            margin-top: 12px;
+            font-weight: 600;
+        }
+
+        /* 内容列表 */
+        .content-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .content-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+
+        .content-list .bullet {
+            width: 8px;
+            height: 8px;
+            background: #0071e3;
+            border-radius: 50%;
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
+
+        /* 数据网格 */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .data-item {
+            background: #f5f5f7;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .data-value {
+            font-size: 48px;
+            font-weight: 700;
+            color: #0071e3;
+            margin-bottom: 8px;
+        }
+
+        .data-label {
+            font-size: 16px;
+            color: #6e6e73;
+            font-weight: 500;
+        }
+
+        /* 对比框 */
+        .comparison-box {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .comparison-item {
+            background: #f5f5f7;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .comparison-item.success {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
+            border: 2px solid #4caf50;
+        }
+
+        .comparison-item.warning {
+            background: linear-gradient(135deg, #fff3e0 0%, #fef7f0 100%);
+            border: 2px solid #ff9800;
+        }
+
+        .comparison-item.error {
+            background: linear-gradient(135deg, #ffebee 0%, #fef5f5 100%);
+            border: 2px solid #f44336;
+        }
+
+        .comparison-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comparison-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+
+        /* 任务卡片样式 */
+        .task-box {
+            background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%);
+            border-radius: 16px;
+            padding: 28px;
+            border-left: 4px solid #0071e3;
+            margin-top: 20px;
+        }
+
+        .task-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 16px;
+        }
+
+        .task-desc {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #6e6e73;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .task-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #e8eaed;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6e6e73;
+        }
+
+        /* 发现框 */
+        .finding-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f5f9ff 100%);
+            border-radius: 16px;
+            padding: 28px;
+            border: 2px solid #0071e3;
+            margin-top: 20px;
+        }
+
+        .finding-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0071e3;
+            margin-bottom: 16px;
+        }
+
+        .finding-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+
+        /* 挑战卡片 */
+        .challenge-box {
+            background: #f5f5f7;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 16px;
+        }
+
+        .challenge-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 12px;
+        }
+
+        .challenge-content {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #6e6e73;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f5f5f7;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: #e8eaed;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .data-table td {
+            padding: 12px 16px;
+            font-size: 15px;
+            color: #1d1d1f;
+            border-top: 1px solid #e8eaed;
+        }
+
+        .data-table .highlight {
+            font-weight: 600;
+            color: #0071e3;
+        }
+
+        /* 排名列表 */
+        .ranking-list {
+            margin-top: 20px;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: #f5f5f7;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .ranking-pos {
+            width: 36px;
+            height: 36px;
+            background: #0071e3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .ranking-pos.top3 {
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+        }
+
+        .ranking-lang {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .ranking-score {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0071e3;
+        }
+
+        /* 导航控制 */
+        .navigation {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: flex-end;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .nav-button {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-button:hover {
+            background: white;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+            transform: scale(1.05);
+        }
+
+        .nav-button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-button:disabled:hover {
+            transform: none;
+        }
+
+        .page-indicator {
+            font-size: 15px;
+            color: #6e6e73;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .page-indicator .current {
+            color: #0071e3;
+            font-weight: 600;
+        }
+
+        /* 键盘提示 */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(29, 29, 31, 0.85);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .keyboard-hint.show {
+            opacity: 1;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .card {
+                padding: 40px;
+            }
+
+            .card-title {
+                font-size: 36px;
+            }
+
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            .card {
+                padding: 30px;
+            }
+
+            .card-title {
+                font-size: 28px;
+            }
+
+            .content-list li {
+                font-size: 16px;
+            }
+
+            .comparison-box {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 强调文本 */
+        .highlight {
+            color: #0071e3;
+            font-weight: 600;
+        }
+
+        .strong-text {
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 卡片容器 -->
+        <div class="card-container">
+            <!-- 卡片1: 封面 -->
+            <div class="card cover-card active">
+                <div class="card-content">
+                    <h1 class="card-title">ONERULER</h1>
+                    <p class="card-subtitle">多语言长上下文语言模型基准测试</p>
+                    <p class="authors">Yekyung Kim · Jenna Russell · Marzena Karpinska · Mohit Iyyer</p>
+                    <p class="authors">University of Maryland · Microsoft · UMass Amherst</p>
+                    <p class="conference">COLM 2025</p>
+                </div>
+            </div>
+
+            <!-- 卡片2: 核心贡献 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">核心贡献</div>
+                    <h2 class="card-title">首个大规模多语言<br>长上下文评估框架</h2>
+                </div>
+                <div class="card-content">
+                    <div class="data-grid">
+                        <div class="data-item">
+                            <div class="data-value">26</div>
+                            <div class="data-label">种语言</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-value">7</div>
+                            <div class="data-label">个合成任务</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-value">128K</div>
+                            <div class="data-label">最大上下文</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-value">6</div>
+                            <div class="data-label">个测试模型</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片3: 研究动机 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">研究背景</div>
+                    <h2 class="card-title">为什么需要这个基准？</h2>
+                </div>
+                <div class="card-content">
+                    <ul class="content-list">
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">语言单一性</span><br>RULER等基准测试主要关注英语</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">缺乏多语言视角</span><br>不清楚模型在多语言场景中的表现</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">任务过于简单</span><br>传统NIAH假设答案总是存在</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 卡片4: 设计目标 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">设计理念</div>
+                    <h2 class="card-title">ONERULER的创新</h2>
+                </div>
+                <div class="card-content">
+                    <ul class="content-list">
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">面向指令微调模型</span><br>不同于RULER针对基座模型</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">引入"无针"选项</span><br>允许答案不存在，更接近真实场景</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">公平跨语言比较</span><br>统一翻译100个名词集合</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">大规模评估</span><br>每任务每模型5,200个提示</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 卡片5: 任务概览 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">测试任务</div>
+                    <h2 class="card-title">7个合成任务</h2>
+                </div>
+                <div class="card-content">
+                    <div class="comparison-box" style="grid-template-columns: 1fr;">
+                        <div class="comparison-item">
+                            <div class="comparison-title">📍 检索任务（5个NIAH变体）</div>
+                            <div class="comparison-content">Single-NIAH · Multi-key · Multi-value · Multi-query · None-NIAH</div>
+                        </div>
+                        <div class="comparison-item">
+                            <div class="comparison-title">📊 聚合任务（2个CWE变体）</div>
+                            <div class="comparison-content">CWE-easy · CWE-hard</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片6: Single-NIAH -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">任务详解 1/7</div>
+                    <h2 class="card-title">Single-NIAH<br>单针任务</h2>
+                </div>
+                <div class="card-content">
+                    <div class="task-box">
+                        <div class="task-name">经典"海里捞针"任务</div>
+                        <div class="task-desc">
+                            在长文本中找到一个目标句子，提取关键词对应的数字
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-badge">基础任务</span>
+                            <span class="task-badge">含none选项</span>
+                        </div>
+                    </div>
+                    <div class="finding-box">
+                        <div class="finding-title">关键发现</div>
+                        <div class="finding-content">
+                            None选项使o3-mini在128K英语上准确率下降<span class="highlight">32个百分点</span>！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片7: 其他NIAH任务 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">任务详解 2-5/7</div>
+                    <h2 class="card-title">NIAH变体任务</h2>
+                </div>
+                <div class="card-content">
+                    <div class="challenge-box">
+                        <div class="challenge-title">Multi-key NIAH · 多键任务</div>
+                        <div class="challenge-content">4个针，3个干扰项，找到正确的key-value对</div>
+                    </div>
+                    <div class="challenge-box">
+                        <div class="challenge-title">Multi-value NIAH · 多值任务</div>
+                        <div class="challenge-content">同一key对应4个value，需全部检索</div>
+                    </div>
+                    <div class="challenge-box">
+                        <div class="challenge-title">Multi-query NIAH · 多查询任务</div>
+                        <div class="challenge-content">多个查询，测试跨操作的上下文感知能力</div>
+                    </div>
+                    <div class="challenge-box">
+                        <div class="challenge-title">None-NIAH · 无针任务</div>
+                        <div class="challenge-content">所有针都是干扰项，正确答案是"none"</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片8: CWE任务 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">任务详解 6-7/7</div>
+                    <h2 class="card-title">CWE 聚合任务</h2>
+                </div>
+                <div class="card-content">
+                    <div class="comparison-box">
+                        <div class="comparison-item">
+                            <div class="comparison-title">CWE-easy</div>
+                            <div class="comparison-content">
+                                最高频词出现<span class="highlight">30次</span><br>
+                                干扰词出现<span class="highlight">3次</span><br><br>
+                                英语平均准确率：<span class="highlight">31.5%</span>
+                            </div>
+                        </div>
+                        <div class="comparison-item error">
+                            <div class="comparison-title">CWE-hard ✗</div>
+                            <div class="comparison-content">
+                                最高频词出现<span class="highlight">20次</span><br>
+                                干扰词出现<span class="highlight">10次</span><br><br>
+                                所有模型准确率：<span class="highlight">≈0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片9: 语言覆盖 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">测试维度</div>
+                    <h2 class="card-title">26种语言覆盖</h2>
+                </div>
+                <div class="card-content">
+                    <ul class="content-list">
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">高资源语言（22种）</span><br>斯拉夫、罗曼、日耳曼语系等</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">低资源语言（4种）</span><br>印地语、斯瓦希里语、泰米尔语、塞索托语</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">定义标准</span><br>维基百科文章数≥25万篇</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 卡片10: 测试模型 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">测试模型</div>
+                    <h2 class="card-title">6个主流模型</h2>
+                </div>
+                <div class="card-content">
+                    <div class="comparison-box">
+                        <div class="comparison-item">
+                            <div class="comparison-title">开源模型（5个）</div>
+                            <div class="comparison-content">
+                                Qwen 2.5 (7B & 72B)<br>
+                                Llama 3.1 (8B)<br>
+                                Llama 3.3 (70B)<br>
+                                DeepSeek-R1
+                            </div>
+                        </div>
+                        <div class="comparison-item">
+                            <div class="comparison-title">闭源模型（2个）</div>
+                            <div class="comparison-content">
+                                OpenAI o3-mini-high<br>
+                                Google Gemini 1.5 Flash
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片11: 发现1 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">主要发现 1/6</div>
+                    <h2 class="card-title">语言差距随<br>上下文长度扩大</h2>
+                </div>
+                <div class="card-content">
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>上下文长度</th>
+                                    <th>准确率差距</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>8K</td>
+                                    <td><span class="highlight">11%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>32K</td>
+                                    <td><span class="highlight">21%</span> (+10%)</td>
+                                </tr>
+                                <tr>
+                                    <td>64K</td>
+                                    <td><span class="highlight">23%</span> (+12%)</td>
+                                </tr>
+                                <tr>
+                                    <td>128K</td>
+                                    <td><span class="highlight">34%</span> (+23%)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="finding-box" style="margin-top: 24px;">
+                        <div class="finding-content">
+                            高资源语言（Top 5）与低资源语言（Bottom 5）的性能差距随上下文长度显著扩大
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片12: 发现2 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">主要发现 2/6</div>
+                    <h2 class="card-title">低资源语言<br>困境重重</h2>
+                </div>
+                <div class="card-content">
+                    <div class="comparison-box">
+                        <div class="comparison-item success">
+                            <div class="comparison-title">高资源语言 ✓</div>
+                            <div class="comparison-content">
+                                8K准确率：<span class="highlight">>95%</span><br>
+                                128K准确率：保持稳定
+                            </div>
+                        </div>
+                        <div class="comparison-item error">
+                            <div class="comparison-title">低资源语言 ✗</div>
+                            <div class="comparison-content">
+                                8K准确率：已经困难<br>
+                                128K准确率：<span class="highlight">个位数</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="finding-box" style="margin-top: 24px;">
+                        <div class="finding-content">
+                            泰米尔语在128K时，多个模型准确率降至个位数。Llama模型性能下降最严重。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片13: 发现3 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">主要发现 3/6</div>
+                    <h2 class="card-title">波兰语排名第一<br>英语仅第六</h2>
+                    <p class="card-subtitle">64K & 128K长上下文NIAH平均准确率</p>
+                </div>
+                <div class="card-content">
+                    <div class="ranking-list">
+                        <div class="ranking-item">
+                            <div class="ranking-pos top3">1</div>
+                            <div class="ranking-lang">波兰语</div>
+                            <div class="ranking-score">88.0%</div>
+                        </div>
+                        <div class="ranking-item">
+                            <div class="ranking-pos top3">2</div>
+                            <div class="ranking-lang">俄语</div>
+                            <div class="ranking-score">~86%</div>
+                        </div>
+                        <div class="ranking-item">
+                            <div class="ranking-pos top3">3</div>
+                            <div class="ranking-lang">法语</div>
+                            <div class="ranking-score">~85%</div>
+                        </div>
+                        <div class="ranking-item">
+                            <div class="ranking-pos">6</div>
+                            <div class="ranking-lang">英语</div>
+                            <div class="ranking-score">83.9%</div>
+                        </div>
+                        <div class="ranking-item">
+                            <div class="ranking-pos">23</div>
+                            <div class="ranking-lang">中文</div>
+                            <div class="ranking-score">62.1%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片14: 发现4 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">主要发现 4/6</div>
+                    <h2 class="card-title">模型性能<br>差异显著</h2>
+                </div>
+                <div class="card-content">
+                    <div class="comparison-box">
+                        <div class="comparison-item success">
+                            <div class="comparison-title">Gemini 1.5 Flash ✓</div>
+                            <div class="comparison-content">
+                                所有上下文长度最强<br>
+                                长上下文稳定性最好
+                            </div>
+                        </div>
+                        <div class="comparison-item success">
+                            <div class="comparison-title">Qwen 2.5 72B ✓</div>
+                            <div class="comparison-content">
+                                多语言支持最均衡<br>
+                                64k和128k优于Llama
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-box" style="margin-top: 20px;">
+                        <div class="comparison-item warning">
+                            <div class="comparison-title">o3-mini-high ⚠</div>
+                            <div class="comparison-content">
+                                英语128K：<span class="highlight">67%</span><br>
+                                波兰语128K：<span class="highlight">92%</span><br>
+                                表现异常
+                            </div>
+                        </div>
+                        <div class="comparison-item">
+                            <div class="comparison-title">DeepSeek-R1</div>
+                            <div class="comparison-content">
+                                采用系统化策略<br>
+                                英语性能优秀
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片15: 发现5 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">主要发现 5/6</div>
+                    <h2 class="card-title">指令语言<br>影响巨大</h2>
+                </div>
+                <div class="card-content">
+                    <div class="finding-box">
+                        <div class="finding-title">跨语言场景</div>
+                        <div class="finding-content">
+                            指令语言与上下文语言不同时，性能变化可达<span class="highlight">20个百分点</span>
+                        </div>
+                    </div>
+                    <div class="comparison-box" style="margin-top: 24px;">
+                        <div class="comparison-item error">
+                            <div class="comparison-title">场景1</div>
+                            <div class="comparison-content">
+                                英语上下文 + 韩语指令<br>
+                                准确率从91%降至<span class="highlight">71%</span> ✗
+                            </div>
+                        </div>
+                        <div class="comparison-item success">
+                            <div class="comparison-title">场景2</div>
+                            <div class="comparison-content">
+                                韩语上下文 + 英语指令<br>
+                                准确率从61%升至<span class="highlight">77%</span> ✓
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片16: 发现6 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">主要发现 6/6</div>
+                    <h2 class="card-title">o3-mini的<br>错误模式</h2>
+                </div>
+                <div class="card-content">
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>上下文</th>
+                                    <th>o3-mini none错误</th>
+                                    <th>其他模型</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>8K</td>
+                                    <td>59.3%</td>
+                                    <td>40.7%</td>
+                                </tr>
+                                <tr>
+                                    <td>32K</td>
+                                    <td>57.6%</td>
+                                    <td>42.4%</td>
+                                </tr>
+                                <tr>
+                                    <td>64K</td>
+                                    <td><span class="highlight">90.2%</span></td>
+                                    <td>9.8%</td>
+                                </tr>
+                                <tr>
+                                    <td>128K</td>
+                                    <td><span class="highlight">88.1%</span></td>
+                                    <td>11.9%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="finding-box" style="margin-top: 24px;">
+                        <div class="finding-content">
+                            o3-mini在超长上下文中过度保守，错误地回答"none"（明明答案存在）
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片17: 挑战1-2 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">核心挑战 1-2</div>
+                    <h2 class="card-title">长上下文的<br>固有问题</h2>
+                </div>
+                <div class="card-content">
+                    <div class="challenge-box">
+                        <div class="challenge-title">位置偏见</div>
+                        <div class="challenge-content">
+                            模型更擅长提取开头和结尾的信息，中间位置最容易被"忽略"
+                        </div>
+                    </div>
+                    <div class="challenge-box">
+                        <div class="challenge-title">语言资源不平衡</div>
+                        <div class="challenge-content">
+                            训练数据的语言分布影响长上下文能力，长上下文能力不能跨语言迁移
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片18: 挑战3-4 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">核心挑战 3-4</div>
+                    <h2 class="card-title">实际应用的<br>难题</h2>
+                </div>
+                <div class="card-content">
+                    <div class="challenge-box">
+                        <div class="challenge-title">注意力稀释效应</div>
+                        <div class="challenge-content">
+                            上下文越长，每个token分配到的注意力越少，关键信息被"淹没"
+                        </div>
+                    </div>
+                    <div class="challenge-box">
+                        <div class="challenge-title">None选项的困境</div>
+                        <div class="challenge-content">
+                            反映真实场景但使准确率显著下降，部分模型过度保守或过度自信
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片19: 应用建议1 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">应用建议</div>
+                    <h2 class="card-title">如何选择<br>合适的模型？</h2>
+                </div>
+                <div class="card-content">
+                    <div class="comparison-box">
+                        <div class="comparison-item">
+                            <div class="comparison-title">多语言文档处理</div>
+                            <div class="comparison-content">
+                                <span class="highlight">推荐：</span>Gemini 1.5 Flash<br>
+                                或 Qwen 2.5 72B
+                            </div>
+                        </div>
+                        <div class="comparison-item">
+                            <div class="comparison-title">英语长文本分析</div>
+                            <div class="comparison-content">
+                                <span class="highlight">推荐：</span>Gemini 1.5 Flash<br>
+                                在英语128K上表现最佳
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-box" style="margin-top: 20px;">
+                        <div class="comparison-item">
+                            <div class="comparison-title">斯拉夫/罗曼语系</div>
+                            <div class="comparison-content">
+                                <span class="highlight">推荐：</span>几乎所有模型<br>
+                                这些语言表现最佳
+                            </div>
+                        </div>
+                        <div class="comparison-item warning">
+                            <div class="comparison-title">低资源语言</div>
+                            <div class="comparison-content">
+                                <span class="highlight">策略：</span>控制≤32K<br>
+                                分段处理+英语指令
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片20: 研究意义 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-number">研究价值</div>
+                    <h2 class="card-title">为什么<br>这很重要？</h2>
+                </div>
+                <div class="card-content">
+                    <ul class="content-list">
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">揭示真实差距</span><br>打破"所有模型都能处理长上下文"的假象</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">指导模型选择</span><br>为实际应用提供基于语言和长度的选择依据</div>
+                        </li>
+                        <li>
+                            <span class="bullet"></span>
+                            <div><span class="strong-text">推动多语言公平</span><br>全球数十亿人使用非英语语言，应享受高质量AI服务</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 卡片21: 总结 -->
+            <div class="card cover-card">
+                <div class="card-content">
+                    <h2 class="card-title" style="font-size: 48px;">核心要点</h2>
+                    <div style="margin-top: 40px;">
+                        <ul class="content-list">
+                            <li>
+                                <span class="bullet"></span>
+                                <div>波兰语在长上下文中优于英语</div>
+                            </li>
+                            <li>
+                                <span class="bullet"></span>
+                                <div>低资源语言在长上下文中性能急剧下降</div>
+                            </li>
+                            <li>
+                                <span class="bullet"></span>
+                                <div>None选项使任务难度显著提升</div>
+                            </li>
+                            <li>
+                                <span class="bullet"></span>
+                                <div>指令语言的选择至关重要</div>
+                            </li>
+                            <li>
+                                <span class="bullet"></span>
+                                <div>长上下文能力不能跨语言迁移</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 导航控制 -->
+        <div class="navigation">
+            <button class="nav-button" id="prevBtn" onclick="prevCard()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </button>
+            <div class="page-indicator">
+                <span class="current" id="currentPage">1</span> / <span id="totalPages">21</span>
+            </div>
+            <button class="nav-button" id="nextBtn" onclick="nextCard()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 键盘提示 -->
+    <div class="keyboard-hint" id="keyboardHint">
+        Ctrl + ← / → 切换卡片
+    </div>
+
+    <script>
+        let currentCard = 0;
+        const cards = document.querySelectorAll('.card');
+        const totalCards = cards.length;
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const currentPageSpan = document.getElementById('currentPage');
+        const totalPagesSpan = document.getElementById('totalPages');
+        const keyboardHint = document.getElementById('keyboardHint');
+
+        totalPagesSpan.textContent = totalCards;
+
+        function showCard(index) {
+            cards.forEach((card, i) => {
+                card.classList.toggle('active', i === index);
+            });
+            
+            currentPageSpan.textContent = index + 1;
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === totalCards - 1;
+        }
+
+        function nextCard() {
+            if (currentCard < totalCards - 1) {
+                currentCard++;
+                showCard(currentCard);
+            }
+        }
+
+        function prevCard() {
+            if (currentCard > 0) {
+                currentCard--;
+                showCard(currentCard);
+            }
+        }
+
+        // 键盘导航
+        let hintTimeout;
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey) {
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextCard();
+                    showKeyboardHint();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prevCard();
+                    showKeyboardHint();
+                }
+            }
+        });
+
+        function showKeyboardHint() {
+            clearTimeout(hintTimeout);
+            keyboardHint.classList.add('show');
+            hintTimeout = setTimeout(() => {
+                keyboardHint.classList.remove('show');
+            }, 2000);
+        }
+
+        // 初始显示提示
+        setTimeout(() => {
+            showKeyboardHint();
+        }, 1000);
+
+        // 触摸滑动支持
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                nextCard();
+            }
+            if (touchEndX > touchStartX + 50) {
+                prevCard();
+            }
+        }
+
+        // 初始化
+        showCard(0);
+    </script>
+</body>
+
+</html>
+
