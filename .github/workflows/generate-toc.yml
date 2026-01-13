@@ -1,0 +1,48 @@
+name: Generate Table of Contents
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      # Trigger when new article folders are added or existing ones are modified
+      - '*/index.html'
+      - '!index.html'  # Exclude root index.html to avoid infinite loops
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  generate-toc:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Generate TOC
+        run: python scripts/generate_toc.py
+      
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code index.html || echo "changes=true" >> $GITHUB_OUTPUT
+      
+      - name: Commit and push changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add index.html
+          git commit -m "docs: auto-generate table of contents [skip ci]"
+          git push
+

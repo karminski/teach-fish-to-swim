@@ -7,6 +7,23 @@
     <meta name="description" content="带大家精读论文，共同学习，共同进步">
     
     <style>
+        @font-face {
+            font-family: 'Sarasa Fixed SC';
+            src: local('Sarasa Fixed SC'), 
+                 local('Sarasa Fixed SC Regular'),
+                 local('更纱黑体 Fixed SC');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Sarasa Fixed SC';
+            src: local('Sarasa Fixed SC Bold'),
+                 local('更纱黑体 Fixed SC Bold');
+            font-weight: 700;
+            font-style: normal;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,7 +31,7 @@
         }
 
         body {
-            font-family: 'Times New Roman', '宋体', serif;
+            font-family: 'Sarasa Fixed SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
             line-height: 1.8;
             color: #333;
             background: #fff;
@@ -91,15 +108,15 @@
         .toc-link {
             text-decoration: none;
             color: #333;
-            display: block;
-            padding: 20px 0;
+            display: flex;
+            align-items: baseline;
+            padding: 15px 0;
             transition: all 0.2s ease;
             border-radius: 4px;
         }
 
         .toc-link:hover {
             background-color: #f9f9f9;
-            transform: translateX(5px);
         }
 
         .toc-link:hover .toc-title-text {
@@ -110,25 +127,33 @@
             font-size: 18px;
             font-weight: 500;
             color: #666;
-            margin-right: 15px;
-            min-width: 30px;
-            display: inline-block;
+            margin-right: 10px;
+            flex-shrink: 0;
         }
 
         .toc-title-text {
             font-size: 18px;
             font-weight: 400;
-            display: inline-block;
-            width: calc(100% - 45px);
+            flex-shrink: 0;
             transition: color 0.2s ease;
+        }
+
+        .toc-dots {
+            flex-grow: 1;
+            border-bottom: 2px dotted #ccc;
+            margin: 0 12px;
+            min-width: 20px;
+            position: relative;
+            top: -4px;
         }
 
         .toc-subtitle {
             font-size: 14px;
             color: #777;
-            margin-top: 5px;
-            margin-left: 45px;
             font-style: italic;
+            flex-shrink: 0;
+            text-align: right;
+            max-width: 45%;
         }
 
         .footer {
@@ -167,7 +192,7 @@
         }
 
         /* 移动端适配 */
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             body {
                 padding: 40px 20px;
             }
@@ -180,20 +205,32 @@
                 font-size: 16px;
             }
             
+            .toc-link {
+                flex-wrap: wrap;
+            }
+            
             .toc-number {
                 font-size: 16px;
-                min-width: 25px;
-                margin-right: 10px;
+                margin-right: 8px;
             }
             
             .toc-title-text {
-                font-size: 16px;
-                width: calc(100% - 35px);
+                font-size: 15px;
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .toc-dots {
+                display: none;
             }
             
             .toc-subtitle {
-                margin-left: 35px;
                 font-size: 13px;
+                width: 100%;
+                text-align: left;
+                margin-top: 5px;
+                padding-left: 30px;
+                max-width: 100%;
             }
         }
 
@@ -223,58 +260,74 @@
         
         <ul class="toc-list">
             <li class="toc-item">
-                <a href="./jet-nemotron/" class="toc-link">
+                <a href="./Agentic%20Context%20Engineering%20Evolving%20Contexts%20for%20Self%20Improving%20Language%20Models/" class="toc-link">
                     <span class="toc-number">01.</span>
-                    <span class="toc-title-text">Jet-Nemotron</span>
-                    <div class="toc-subtitle">突破性的语言模型优化技术</div>
+                    <span class="toc-title-text">Agentic Context Engineering Evolving Contexts for Self Improving Language Models</span>
+                    <span class="toc-dots"></span>
+                    <span class="toc-subtitle">ACE: 智能体上下文工程的革命性突破</span>
                 </a>
             </li>
             
             <li class="toc-item">
-                <a href="./video-models-are-zero-shot-learners-and-reasoners/" class="toc-link">
+                <a href="./Benchmarking%20multilingual%20long%20context%20language%20models/" class="toc-link">
                     <span class="toc-number">02.</span>
-                    <span class="toc-title-text">Video Models are Zero-shot Learners and Reasoners</span>
-                    <div class="toc-subtitle">视频生成模型的零样本学习能力 (Veo 3 的论文)</div>
+                    <span class="toc-title-text">Benchmarking multilingual long context language models</span>
+                    <span class="toc-dots"></span>
+                    <span class="toc-subtitle">ONERULER: 多语言长上下文语言模型基准测试</span>
                 </a>
             </li>
             
             <li class="toc-item">
-                <a href="./sinq/" class="toc-link">
+                <a href="./Conditional%20Memory%20via%20Scalable%20Lookup%20A%20New%20Axis%20of%20Sparsity%20for%20Large%20Language%20Models/" class="toc-link">
                     <span class="toc-number">03.</span>
-                    <span class="toc-title-text">SINQ: Sinkhorn-Normalized Quantization</span>
-                    <div class="toc-subtitle">无需校准的高效模型量化技术</div>
+                    <span class="toc-title-text">Conditional Memory via Scalable Lookup A New Axis of Sparsity for Large Language Models</span>
+                    <span class="toc-dots"></span>
+                    <span class="toc-subtitle">DeepSeek Engram：条件记忆——大语言模型稀疏性的新维度</span>
                 </a>
             </li>
             
             <li class="toc-item">
-                <a href="./Agentic-Context-Engineering-Evolving-Contexts-for-Self-Improving-Language-Models/" class="toc-link">
+                <a href="./jet-nemotron/" class="toc-link">
                     <span class="toc-number">04.</span>
-                    <span class="toc-title-text">ACE: Agentic Context Engineering</span>
-                    <div class="toc-subtitle">智能体上下文工程 - 让LLM持续进化的战术手册</div>
+                    <span class="toc-title-text">jet nemotron</span>
+                    <span class="toc-dots"></span>
+                    <span class="toc-subtitle">Jet-Nemotron: 高效语言模型的革命性突破</span>
                 </a>
             </li>
             
             <li class="toc-item">
-                <a href="./Pretraining-Large-Language-Models-with-NVFP4/" class="toc-link">
+                <a href="./Pretraining%20Large%20Language%20Models%20with%20NVFP4/" class="toc-link">
                     <span class="toc-number">05.</span>
                     <span class="toc-title-text">Pretraining Large Language Models with NVFP4</span>
-                    <div class="toc-subtitle">4位浮点数预训练 - 大语言模型训练精度的革命性突破</div>
+                    <span class="toc-dots"></span>
+                    <span class="toc-subtitle">NVFP4: 大语言模型4位浮点数预训练的革命性突破</span>
                 </a>
             </li>
             
             <li class="toc-item">
                 <a href="./Recursive-Language-Models/" class="toc-link">
                     <span class="toc-number">06.</span>
-                    <span class="toc-title-text">Recursive Language Models (RLM)</span>
-                    <div class="toc-subtitle">递归语言模型 - 让模型决定如何处理海量上下文</div>
+                    <span class="toc-title-text">Recursive Language Models</span>
+                    <span class="toc-dots"></span>
+                    <span class="toc-subtitle">递归语言模型 (RLM) - 让模型决定如何处理海量上下文</span>
                 </a>
             </li>
             
             <li class="toc-item">
-                <a href="./Benchmarking-multilingual-long-context-language-models/" class="toc-link">
+                <a href="./SINQ/" class="toc-link">
                     <span class="toc-number">07.</span>
-                    <span class="toc-title-text">ONERULER: Benchmarking Multilingual Long-Context Language Models</span>
-                    <div class="toc-subtitle">多语言长上下文基准测试 - 揭示波兰语优于英语的反直觉发现</div>
+                    <span class="toc-title-text">SINQ</span>
+                    <span class="toc-dots"></span>
+                    <span class="toc-subtitle">SINQ: 无需校准的高效模型量化</span>
+                </a>
+            </li>
+            
+            <li class="toc-item">
+                <a href="./Video%20Models%20are%20Zero%20Shot%20Learners%20and%20Reasoners/" class="toc-link">
+                    <span class="toc-number">08.</span>
+                    <span class="toc-title-text">Video Models are Zero Shot Learners and Reasoners</span>
+                    <span class="toc-dots"></span>
+                    <span class="toc-subtitle">视频模型的零样本学习与推理能力</span>
                 </a>
             </li>
         </ul>
