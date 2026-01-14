@@ -314,32 +314,7 @@
             }
         }
 
-        /* 动画效果 */
-        @keyframes noteFloat {
-            0% {
-                transform: translateY(0px) rotate(-0.5deg);
-            }
 
-            50% {
-                transform: translateY(-5px) rotate(0.5deg);
-            }
-
-            100% {
-                transform: translateY(0px) rotate(-0.5deg);
-            }
-        }
-
-        .note-card {
-            animation: noteFloat 6s ease-in-out infinite;
-        }
-
-        .note-card:nth-child(even) {
-            animation-delay: 2s;
-        }
-
-        .note-card:nth-child(3n) {
-            animation-delay: 4s;
-        }
     </style>
 </head>
 
@@ -545,21 +520,27 @@
     </div>
 
     <script>
-        // 添加便签纸浮动效果
+        // 卡片悬停效果（无晃动动画）
         document.addEventListener('DOMContentLoaded', function () {
             const noteCards = document.querySelectorAll('.note-card, .step-note, .stat-note');
 
             noteCards.forEach((card, index) => {
-                card.style.animationDelay = `${index * 0.5}s`;
-
                 card.addEventListener('mouseenter', function () {
-                    this.style.animationPlayState = 'paused';
                     this.style.transform = 'rotate(0deg) scale(1.02)';
                     this.style.zIndex = '10';
                 });
 
                 card.addEventListener('mouseleave', function () {
-                    this.style.animationPlayState = 'running';
+                    // 恢复原始旋转
+                    const isEven = Array.from(card.parentElement.children).indexOf(card) % 2 === 1;
+                    const is3n = (Array.from(card.parentElement.children).indexOf(card) + 1) % 3 === 0;
+                    if (is3n) {
+                        this.style.transform = 'rotate(-0.3deg)';
+                    } else if (isEven) {
+                        this.style.transform = 'rotate(0.5deg)';
+                    } else {
+                        this.style.transform = 'rotate(-0.5deg)';
+                    }
                     this.style.zIndex = '1';
                 });
             });

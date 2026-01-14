@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTT-E2E: 端到端测试时训练实现长上下文</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c2c2c;
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e8e2 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #00b894, #00cec9, #0984e3, #6c5ce7);
+        }
+
+        .card-content {
+            padding: 50px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #00b894, #6c5ce7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 便签笔记样式 */
+        .note-section {
+            margin-bottom: 40px;
+        }
+
+        .note-card {
+            background: #e8f8f5;
+            border: 2px solid #00b894;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .note-card:nth-child(even) {
+            background: #e8f4fc;
+            border-color: #0984e3;
+            box-shadow: 0 4px 12px rgba(9, 132, 227, 0.2);
+            transform: rotate(0.5deg);
+        }
+
+        .note-card:nth-child(3n) {
+            background: #f5f0ff;
+            border-color: #6c5ce7;
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+            transform: rotate(-0.3deg);
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '📝';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 24px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-title::before {
+            content: '•';
+            color: #00b894;
+            font-size: 24px;
+        }
+
+        .note-content {
+            color: #444;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .highlight-warn {
+            background: linear-gradient(120deg, #fff3cd 0%, #ffeaa7 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #856404;
+        }
+
+        .highlight-good {
+            background: linear-gradient(120deg, #d4edda 0%, #c3e6cb 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #155724;
+        }
+
+        .code-block {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        /* 对比表格 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #00b894, #6c5ce7);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .best-result {
+            background: #e8f5e9;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .warn-result {
+            background: #fff3cd;
+            font-weight: 600;
+            color: #856404;
+        }
+
+        /* 性能数据网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-note {
+            background: linear-gradient(135deg, #e8f8f5 0%, #d1f2eb 100%);
+            border: 2px solid #00b894;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-note:nth-child(even) {
+            transform: rotate(1deg);
+            background: linear-gradient(135deg, #e8f4fc 0%, #d6eaf8 100%);
+            border-color: #0984e3;
+        }
+
+        .stat-note:nth-child(3) {
+            background: linear-gradient(135deg, #f5f0ff 0%, #e8daef 100%);
+            border-color: #6c5ce7;
+        }
+
+        .stat-note:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #00b894;
+            margin-bottom: 8px;
+        }
+
+        .stat-note:nth-child(even) .stat-number {
+            color: #0984e3;
+        }
+
+        .stat-note:nth-child(3) .stat-number {
+            color: #6c5ce7;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* 技术步骤 */
+        .tech-steps {
+            margin: 40px 0;
+        }
+
+        .step-note {
+            background: #e8f8f5;
+            border: 2px solid #00b894;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+            transform: rotate(0.3deg);
+        }
+
+        .step-note:nth-child(even) {
+            background: #f5f0ff;
+            border-color: #6c5ce7;
+            transform: rotate(-0.3deg);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #00b894;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .step-note:nth-child(even) .step-number {
+            background: #6c5ce7;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #2c2c2c;
+            margin-left: 15px;
+        }
+
+        .step-content {
+            color: #444;
+            line-height: 1.6;
+            margin-left: 15px;
+        }
+
+        /* 图片区域样式 */
+        .image-section {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .image-caption {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+            padding: 0 20px;
+        }
+
+        /* 警告框 */
+        .warning-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #f39c12;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .warning-box::before {
+            content: '⚠️';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            font-size: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .warning-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #856404;
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+
+        .warning-content {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        /* 适用场景卡片 */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .scenario-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #00b894;
+        }
+
+        .scenario-card.negative {
+            border-left-color: #e74c3c;
+        }
+
+        .scenario-card h4 {
+            font-size: 16px;
+            color: #2c2c2c;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scenario-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .scenario-card li {
+            padding: 6px 0;
+            color: #555;
+            font-size: 14px;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .scenario-card li:last-child {
+            border-bottom: none;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-content {
+                padding: 30px 25px;
+            }
+
+            .title {
+                font-size: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .note-card {
+                padding: 20px;
+                transform: rotate(0deg);
+            }
+
+            .note-card:hover {
+                transform: scale(1.02);
+            }
+
+            .scenario-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-card">
+        <div class="card-content">
+            <!-- 标题区域 -->
+            <div class="header-section">
+                <h1 class="title">TTT-E2E</h1>
+                <p class="subtitle">End-to-End Test-Time Training for Long Context</p>
+                <p class="description">
+                    将<span class="highlight">长上下文语言建模</span>重新定义为<span class="highlight">持续学习问题</span>，
+                    而非架构设计问题。在 128K 上下文长度下达到与全注意力 Transformer 相当的性能，
+                    同时<span class="highlight-good">推理速度快 2.7 倍</span>。
+                    核心思想：像人脑一样将信息压缩到权重中，而非完美记忆每个细节。
+                </p>
+            </div>
+
+            <!-- 核心洞察 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">核心洞察：从回忆到压缩</div>
+                    <div class="note-content">
+                        想象你第一次上机器学习课：你可能不记得讲师的第一句话，但你学到的直觉可能正在帮助你理解这篇论文——即使那堂课发生在多年前。<br><br>
+                        <span class="highlight">传统方法（全注意力）</span>：像录音机一样完美回忆每个细节，但成本随上下文长度线性增长<br>
+                        <span class="highlight">RNN 方法（如 Mamba 2）</span>：成本恒定，但在长上下文中效果下降<br>
+                        <span class="highlight-good">TTT-E2E 方法</span>：像人脑一样，将信息压缩到权重中，保留重要信息而丢弃细节
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">什么是测试时训练 (TTT)？</div>
+                    <div class="note-content">
+                        传统模型在测试时是"冻结"的，但 TTT 允许模型在测试时继续学习：
+                        <div class="code-block">
+传统方法：训练 → 冻结权重 → 测试
+TTT 方法：训练 → 在测试上下文上继续学习 → 预测
+                        </div>
+                        当模型收到一个长上下文时，它会：<br>
+                        1️⃣ 将上下文作为"练习题"<br>
+                        2️⃣ 尝试预测每个 token，计算损失<br>
+                        3️⃣ 用这个损失更新权重<br>
+                        4️⃣ 将学到的信息压缩到更新后的权重中
+                    </div>
+                </div>
+            </div>
+
+            <!-- 扩展性图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Scaling with context length, in terms of test loss (left) and latency (right).png"
+                        alt="长上下文扩展性">
+                </div>
+                <div class="image-caption">
+                    长上下文扩展性：TTT-E2E 将最差的基线（绿色线）变成了 128K 上下文下最好的（蓝色线），同时保持恒定的推理延迟
+                </div>
+            </div>
+
+            <!-- 性能数据 -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">2.7×</div>
+                    <div class="stat-label">Decode 推理加速</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">O(n)</div>
+                    <div class="stat-label">线性时间复杂度</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">128K</div>
+                    <div class="stat-label">上下文长度</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">3B</div>
+                    <div class="stat-label">验证模型参数量</div>
+                </div>
+            </div>
+
+            <!-- Toy Example -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">Toy Example 直观理解</div>
+                    <div class="note-content">
+                        考虑一个简单场景：给定 x₁ 和 x₂ 作为上下文，预测未知的 x₃。<br><br>
+                        <span class="highlight">无注意力的 Transformer</span>：由于没有记忆 x₁，它实际上只是一个 bigram 模型<br><br>
+                        <span class="highlight-good">TTT 方法</span>：<br>
+                        1️⃣ 首先尝试从 x₁ 预测 x₂（作为练习）<br>
+                        2️⃣ 计算损失 ℓ₂，并进行梯度更新<br>
+                        3️⃣ 现在 x₁ 的信息被存储在更新后的 MLP 中（图中蓝色部分）<br>
+                        4️⃣ 用更新后的模型预测 x₃
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Toy example.png" alt="Toy Example 示意图">
+                </div>
+                <div class="image-caption">
+                    Toy Example：TTT 通过在测试时进行梯度更新，将早期 token 的信息压缩到 MLP 权重中
+                </div>
+            </div>
+
+            <!-- 端到端的两层含义 -->
+            <div class="tech-steps">
+                <div class="step-note">
+                    <div class="step-number">1</div>
+                    <div class="step-title">内循环：端到端的测试时学习</div>
+                    <div class="step-content">
+                        <span class="highlight">直接优化网络末端的下一个 token 预测损失</span>，而不像之前的工作（TTT-KVB）那样在中间层优化辅助损失。
+                        <br><br>
+                        这意味着梯度信号直接来自最终任务，无需设计额外的损失函数。
+                    </div>
+                </div>
+
+                <div class="step-note">
+                    <div class="step-number">2</div>
+                    <div class="step-title">外循环：端到端的元学习训练</div>
+                    <div class="step-content">
+                        在训练时就为 TTT 准备好最优的初始化：<br><br>
+                        • 每个训练序列先当作测试序列进行 TTT（内循环）<br>
+                        • 然后优化 <span class="highlight">TTT 后的损失</span> 对初始化参数的梯度（外循环）<br><br>
+                        这解决了传统动态评估的关键问题：训练时优化的是"开箱即用"的损失，而不是 TTT 后的损失。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 计算图对比 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Computation graphs following the setup in Figure.png" alt="计算图对比">
+                </div>
+                <div class="image-caption">
+                    计算图对比：(a) TTT-E2E 的主方法 vs (b) 之前的工作 TTT-KVB
+                </div>
+            </div>
+
+            <!-- 方法对比表 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">与其他方法的对比</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>方法</th>
+                                <th>复杂度</th>
+                                <th>长上下文效果</th>
+                                <th>核心机制</th>
+                            </tr>
+                            <tr>
+                                <td>全注意力</td>
+                                <td>O(n²)</td>
+                                <td>最佳</td>
+                                <td>完美回忆</td>
+                            </tr>
+                            <tr>
+                                <td>滑动窗口</td>
+                                <td>O(n)</td>
+                                <td>较差</td>
+                                <td>局部记忆</td>
+                            </tr>
+                            <tr>
+                                <td>Mamba 2</td>
+                                <td>O(n)</td>
+                                <td>中等</td>
+                                <td>RNN 状态</td>
+                            </tr>
+                            <tr>
+                                <td>TTT-KVB</td>
+                                <td>O(n)</td>
+                                <td>中等</td>
+                                <td>中间层 TTT</td>
+                            </tr>
+                            <tr class="best-result">
+                                <td><strong>TTT-E2E</strong></td>
+                                <td><strong>O(n)</strong></td>
+                                <td><strong>最佳</strong></td>
+                                <td><strong>端到端 TTT</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 训练效率图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Training efficiency, in terms of latency on an H200 (left) and FLOPs (right).png"
+                        alt="训练效率">
+                </div>
+                <div class="image-caption">
+                    训练效率：TTT-E2E 的训练成本约为全注意力的 2-3 倍，但这是用训练成本换取推理加速
+                </div>
+            </div>
+
+            <!-- 核心权衡警告 -->
+            <div class="warning-box">
+                <div class="warning-title">核心权衡：Prefill vs Decode</div>
+                <div class="warning-content">
+                    TTT-E2E 的 2.7 倍加速<span class="highlight-warn">仅针对 Decode 阶段</span>，
+                    而 <span class="highlight-warn">Prefill 阶段实际上比全注意力更慢</span>！<br><br>
+                    这是因为 TTT-E2E 的"魔法"发生在 Prefill 阶段：
+                    <div class="code-block">
+全注意力 Prefill：单次前向传播 → 缓存 KV
+TTT-E2E Prefill：前向传播 → 计算损失 → 反向传播 → 更新权重 → 重复...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prefill vs Decode 表格 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">Prefill vs Decode 性能对比</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>阶段</th>
+                                <th>全注意力</th>
+                                <th>TTT-E2E</th>
+                                <th>对比</th>
+                            </tr>
+                            <tr class="warn-result">
+                                <td><strong>Prefill</strong></td>
+                                <td>快（单次前向）</td>
+                                <td>慢（需要梯度更新）</td>
+                                <td>⚠️ TTT-E2E 更慢</td>
+                            </tr>
+                            <tr class="best-result">
+                                <td><strong>Decode</strong></td>
+                                <td>慢（扫描全部 KV）</td>
+                                <td>快（恒定延迟）</td>
+                                <td>✅ TTT-E2E 快 2.7x</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 适用场景 -->
+            <div class="scenario-grid">
+                <div class="scenario-card">
+                    <h4>✅ TTT-E2E 更适合</h4>
+                    <ul>
+                        <li>🔹 长上下文 + 长输出生成（如长文档摘要、代码生成）</li>
+                        <li>🔹 Decode 时间远超 Prefill 时间的场景</li>
+                        <li>🔹 批量推理（Prefill 成本可以分摊）</li>
+                    </ul>
+                </div>
+                <div class="scenario-card negative">
+                    <h4>❌ TTT-E2E 不适合</h4>
+                    <ul>
+                        <li>🔸 短输出场景（如问答、分类）</li>
+                        <li>🔸 实时交互场景 — 首 token 延迟较高</li>
+                        <li>🔸 频繁切换上下文的场景</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 超参数敏感性 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Ablations on three hyper-parameters.png" alt="超参数消融实验">
+                </div>
+                <div class="image-caption">
+                    超参数消融实验：内循环学习率、更新层数、批大小 b 对性能的影响
+                </div>
+            </div>
+
+            <!-- 实现复杂度 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">实现复杂度与依赖要求</div>
+                    <div class="note-content">
+                        根据 GitHub 仓库的要求，系统依赖相当严格：
+                        <div class="code-block">
+# 系统依赖要求
+CUDA Toolkit: 12.8.1
+cuDNN: 9.8.0
+NCCL: 2.26.2
+
+# 框架限制
+实现语言: JAX（非 PyTorch）
+                        </div>
+                        这意味着：<br>
+                        ⚠️ 无法直接集成到现有的 PyTorch 推理框架<br>
+                        ⚠️ 需要特定版本的 CUDA 生态系统<br>
+                        ⚠️ 生产部署门槛较高
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">超参数敏感性</div>
+                    <div class="note-content">
+                        • <span class="highlight-warn">内循环学习率</span>：过大导致不稳定，过小则学不到东西，需要仔细调节<br>
+                        • <span class="highlight">更新层数</span>：论文发现只更新 MLP 层效果最好<br>
+                        • <span class="highlight">批大小 b</span>：影响效率和效果的权衡，需要针对具体任务调优
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">尚未验证的场景</div>
+                    <div class="note-content">
+                        • 📊 <span class="highlight-warn">下游任务</span>：论文主要在语言建模（perplexity）上验证，对 RAG、多轮对话等实际应用场景的效果尚不清楚<br>
+                        • 🔧 <span class="highlight-warn">指令微调后</span>：TTT 在经过 SFT/RLHF 的模型上是否仍然有效？<br>
+                        • 🖼️ <span class="highlight-warn">多模态</span>：是否适用于视觉-语言模型的长上下文场景？
+                    </div>
+                </div>
+            </div>
+
+            <!-- 局限性总结表 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">局限性总结</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>维度</th>
+                                <th>局限性</th>
+                                <th>严重程度</th>
+                            </tr>
+                            <tr class="warn-result">
+                                <td>Prefill 速度</td>
+                                <td>比全注意力更慢</td>
+                                <td>⚠️ 高</td>
+                            </tr>
+                            <tr class="warn-result">
+                                <td>首 token 延迟</td>
+                                <td>较高，不适合实时交互</td>
+                                <td>⚠️ 高</td>
+                            </tr>
+                            <tr>
+                                <td>训练成本</td>
+                                <td>2-3 倍于全注意力</td>
+                                <td>🔶 中</td>
+                            </tr>
+                            <tr>
+                                <td>实现复杂度</td>
+                                <td>仅 JAX，依赖版本严格</td>
+                                <td>🔶 中</td>
+                            </tr>
+                            <tr>
+                                <td>超参数调优</td>
+                                <td>对学习率敏感</td>
+                                <td>🔶 中</td>
+                            </tr>
+                            <tr>
+                                <td>应用验证</td>
+                                <td>仅验证语言建模任务</td>
+                                <td>🔶 中</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 核心创新总结 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">核心创新总结</div>
+                    <div class="note-content">
+                        ✨ <span class="highlight-good">问题重构</span>：将长上下文建模从架构设计问题转变为持续学习问题<br><br>
+                        ✨ <span class="highlight-good">端到端内循环</span>：直接优化最终预测损失，而非辅助损失<br><br>
+                        ✨ <span class="highlight-good">元学习外循环</span>：在训练时就为测试时学习做好准备<br><br>
+                        ✨ <span class="highlight-good">效率与效果兼得</span>：RNN 级别的效率 + 全注意力级别的效果（仅限 Decode 阶段）
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loss Breakdown 图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Loss breakdown by token index, for context length 32K (left) and 128K (right).png"
+                        alt="按 Token 位置的损失分解">
+                </div>
+                <div class="image-caption">
+                    按 Token 位置的损失分解：TTT-E2E 在序列后期（需要长程依赖的地方）表现尤其出色
+                </div>
+            </div>
+
+            <!-- 参考信息 -->
+            <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                <p style="color: #666; font-size: 14px;">
+                    基于 Stanford University、UC Berkeley、NVIDIA 等机构联合发布的 TTT-E2E 研究论文 |
+                    <a href="https://arxiv.org/abs/2512.23675" style="color: #00b894; text-decoration: none;">论文原文</a>
+                    |
+                    <a href="https://github.com/test-time-training/e2e"
+                        style="color: #00b894; text-decoration: none;">GitHub 项目</a>
+                </p>
+            </div>
+
+            <!-- Logo区域 -->
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px;">
+                <a href="https://llm-arena.kcores.com" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; text-decoration: none;">
+                    <img src="../sinq/assets/images/kcores-llm-arena-logo-black.png" alt="Kcores LLM Arena Logo"
+                        style="max-height: 60px; opacity: 0.8; transition: all 0.3s ease; cursor: pointer;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 卡片悬停效果（无晃动动画）
+        document.addEventListener('DOMContentLoaded', function () {
+            const noteCards = document.querySelectorAll('.note-card, .step-note, .stat-note');
+
+            noteCards.forEach((card, index) => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'rotate(0deg) scale(1.02)';
+                    this.style.zIndex = '10';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    // 恢复原始旋转
+                    const isEven = Array.from(card.parentElement.children).indexOf(card) % 2 === 1;
+                    const is3n = (Array.from(card.parentElement.children).indexOf(card) + 1) % 3 === 0;
+                    if (is3n) {
+                        this.style.transform = 'rotate(-0.3deg)';
+                    } else if (isEven) {
+                        this.style.transform = 'rotate(0.5deg)';
+                    } else {
+                        this.style.transform = 'rotate(-0.5deg)';
+                    }
+                    this.style.zIndex = '1';
+                });
+            });
+        });
+
+        // 图片加载优化
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('load', function () {
+                this.style.opacity = '1';
+            });
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
+        });
+
+        // Logo悬停效果
+        const logoLink = document.querySelector('a[href="https://llm-arena.kcores.com"]');
+        const logo = document.querySelector('img[alt="Kcores LLM Arena Logo"]');
+        if (logoLink && logo) {
+            logoLink.addEventListener('mouseenter', function () {
+                logo.style.opacity = '1';
+                logo.style.transform = 'scale(1.05)';
+            });
+
+            logoLink.addEventListener('mouseleave', function () {
+                logo.style.opacity = '0.8';
+                logo.style.transform = 'scale(1)';
+            });
+        }
+    </script>
+</body>
+
+</html>
+

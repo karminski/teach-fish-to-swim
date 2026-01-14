@@ -16,16 +16,6 @@
 
 整理好的网页版可以访问 [swim.kcores.com](https://swim.kcores.com)
 
-## Index
-
-- [jet-nemotron](./jet-nemotron/)
-- [Video Models are Zero-shot Learners and Reasoners](./video-models-are-zero-shot-learners-and-reasoners/)
-- [SINQ: Sinkhorn-Normalized Quantization](./sinq/)
-- [ACE: Agentic Context Engineering](./Agentic-Context-Engineering-Evolving-Contexts-for-Self-Improving-Language-Models/)
-- [Pretraining Large Language Models with NVFP4](./Pretraining-Large-Language-Models-with-NVFP4/)
-- [Recursive Language Models (RLM)](./Recursive-Language-Models/)
-- [ONERULER: Benchmarking Multilingual Long-Context Language Models](./Benchmarking-multilingual-long-context-language-models/)
-
 ## License
 
 CC-BY-NC-SA-4.0 @karminski
