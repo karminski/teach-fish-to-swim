@@ -1,7 +1,12 @@
 班门弄斧 (Teach Fish to Swim)
 ----------------------------
 
-![](./assets/images/kcores-llm-arena-logo-black.png)
+![](./assets/images/cover.png)
+
+
+```prompt
+Close-up shot, a small concrete square spiral staircase. Macro lens, shallow depth of field, miniature photography technique, photo-like realism. Bauhaus style. Tiny people walking on it. One hand holding the edge of the miniature bridge. Miniature world and architecture. Soft light. Delicate and charming atmosphere. --ar 1:1
+```
 
 **带大家精读论文**
 
@@ -19,3 +24,5 @@
 ## License
 
 CC-BY-NC-SA-4.0 @karminski
+
+![](./assets/images/kcores-llm-arena-logo-black.png)
