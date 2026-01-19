@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BabyVision: 超越语言的视觉推理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c2c2c;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8d6 50%, #fff0db 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+        }
+
+        .card-content {
+            padding: 50px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 便签笔记样式 */
+        .note-section {
+            margin-bottom: 40px;
+        }
+
+        .note-card {
+            background: #fff5f5;
+            border: 2px solid #ff6b6b;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.2);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .note-card:nth-child(even) {
+            background: #fff8e6;
+            border-color: #feca57;
+            box-shadow: 0 4px 12px rgba(254, 202, 87, 0.2);
+            transform: rotate(0.5deg);
+        }
+
+        .note-card:nth-child(3n) {
+            background: #e8f8ff;
+            border-color: #48dbfb;
+            box-shadow: 0 4px 12px rgba(72, 219, 251, 0.2);
+            transform: rotate(-0.3deg);
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '👁️';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 24px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-title::before {
+            content: '•';
+            color: #ff6b6b;
+            font-size: 24px;
+        }
+
+        .note-content {
+            color: #444;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .highlight-warn {
+            background: linear-gradient(120deg, #ffcccc 0%, #ff9999 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #c0392b;
+        }
+
+        .highlight-good {
+            background: linear-gradient(120deg, #d4edda 0%, #c3e6cb 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #155724;
+        }
+
+        .code-block {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        /* 对比表格 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .best-result {
+            background: #e8f5e9;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .warn-result {
+            background: #ffebee;
+            font-weight: 600;
+            color: #c62828;
+        }
+
+        /* 性能数据网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-note {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+            border: 2px solid #ff6b6b;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-note:nth-child(even) {
+            transform: rotate(1deg);
+            background: linear-gradient(135deg, #fff8e6 0%, #fff3cd 100%);
+            border-color: #feca57;
+        }
+
+        .stat-note:nth-child(3) {
+            background: linear-gradient(135deg, #e8f8ff 0%, #d6f0ff 100%);
+            border-color: #48dbfb;
+        }
+
+        .stat-note:nth-child(4) {
+            background: linear-gradient(135deg, #fff0f6 0%, #ffe0ec 100%);
+            border-color: #ff9ff3;
+        }
+
+        .stat-note:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ff6b6b;
+            margin-bottom: 8px;
+        }
+
+        .stat-note:nth-child(even) .stat-number {
+            color: #f39c12;
+        }
+
+        .stat-note:nth-child(3) .stat-number {
+            color: #0abde3;
+        }
+
+        .stat-note:nth-child(4) .stat-number {
+            color: #e056fd;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* 挑战卡片 */
+        .challenge-section {
+            margin: 40px 0;
+        }
+
+        .challenge-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #ff6b6b;
+        }
+
+        .challenge-card:nth-child(even) {
+            border-left-color: #feca57;
+        }
+
+        .challenge-card:nth-child(3) {
+            border-left-color: #48dbfb;
+        }
+
+        .challenge-card:nth-child(4) {
+            border-left-color: #ff9ff3;
+        }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .challenge-number {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .challenge-card:nth-child(even) .challenge-number {
+            background: linear-gradient(135deg, #feca57, #f39c12);
+        }
+
+        .challenge-card:nth-child(3) .challenge-number {
+            background: linear-gradient(135deg, #48dbfb, #0abde3);
+        }
+
+        .challenge-card:nth-child(4) .challenge-number {
+            background: linear-gradient(135deg, #ff9ff3, #e056fd);
+        }
+
+        .challenge-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c2c2c;
+        }
+
+        .challenge-subtitle {
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .challenge-content {
+            color: #444;
+            line-height: 1.7;
+        }
+
+        .challenge-image {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .challenge-image img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .challenge-stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed #eee;
+        }
+
+        .challenge-stat {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .challenge-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #27ae60;
+        }
+
+        .challenge-stat-value.bad {
+            color: #e74c3c;
+        }
+
+        .challenge-stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* 图片区域样式 */
+        .image-section {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .image-caption {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+            padding: 0 20px;
+        }
+
+        /* 警告框 */
+        .warning-box {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border: 2px solid #e74c3c;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .warning-box::before {
+            content: '🔍';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            font-size: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .warning-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #c0392b;
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+
+        .warning-content {
+            color: #7f1d1d;
+            line-height: 1.6;
+        }
+
+        /* 发现框 */
+        .insight-box {
+            background: linear-gradient(135deg, #e8f8f5 0%, #d1f2eb 100%);
+            border: 2px solid #27ae60;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .insight-box::before {
+            content: '💡';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            font-size: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .insight-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e8449;
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+
+        .insight-content {
+            color: #145a32;
+            line-height: 1.6;
+        }
+
+        /* 适用场景卡片 */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .scenario-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #27ae60;
+        }
+
+        .scenario-card.negative {
+            border-left-color: #e74c3c;
+        }
+
+        .scenario-card h4 {
+            font-size: 16px;
+            color: #2c2c2c;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scenario-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .scenario-card li {
+            padding: 6px 0;
+            color: #555;
+            font-size: 14px;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .scenario-card li:last-child {
+            border-bottom: none;
+        }
+
+        /* 年龄对比可视化 */
+        .age-comparison {
+            margin: 30px 0;
+        }
+
+        .age-bar {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            gap: 15px;
+        }
+
+        .age-label {
+            width: 180px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .age-bar-container {
+            flex: 1;
+            background: #f0f0f0;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .age-bar-fill {
+            height: 100%;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            transition: width 0.5s ease;
+        }
+
+        .age-bar-fill.human {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+        }
+
+        .age-bar-fill.model {
+            background: linear-gradient(90deg, #e74c3c, #ff6b6b);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-content {
+                padding: 30px 25px;
+            }
+
+            .title {
+                font-size: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .note-card {
+                padding: 20px;
+                transform: rotate(0deg);
+            }
+
+            .note-card:hover {
+                transform: scale(1.02);
+            }
+
+            .scenario-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .challenge-stats {
+                flex-direction: column;
+            }
+
+            .age-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .age-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .age-bar-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-card">
+        <div class="card-content">
+            <!-- 标题区域 -->
+            <div class="header-section">
+                <h1 class="title">BabyVision</h1>
+                <p class="subtitle">Visual Reasoning Beyond Language — 超越语言的视觉推理</p>
+                <p class="description">
+                    当今最先进的多模态大模型（MLLMs）在<span class="highlight">人类幼儿都能轻松解决的基础视觉任务</span>上惨遭失败。
+                    最强模型 Gemini3-Pro-Preview 仅获得 <span class="highlight-warn">49.7 分</span>，
+                    而成年人平均高达 <span class="highlight-good">94.1 分</span>，甚至落后于 6 岁儿童。
+                    这揭示了一个残酷的事实：MLLMs <span class="highlight">并非真正"看见"了图像，而是在用语言知识"猜测"答案</span>。
+                </p>
+            </div>
+
+            <!-- 核心数据 -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">44.4%</div>
+                    <div class="stat-label">最强模型落后成人的差距</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">388</div>
+                    <div class="stat-label">道独特测试题目</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">22</div>
+                    <div class="stat-label">个子任务类别</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">~3岁</div>
+                    <div class="stat-label">最强模型的等效视觉年龄</div>
+                </div>
+            </div>
+
+            <!-- 核心洞察 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">核心洞察：倒置的能力画像</div>
+                    <div class="note-content">
+                        人类的视觉理解发展路径是：<span class="highlight">先有视觉，后有语言</span>。婴儿在出生后几个月内就能辨别形状、纹理、追踪运动物体。<br><br>
+                        然而，MLLMs 呈现出<span class="highlight-warn">完全相反的能力画像</span>：<br>
+                        • <span class="highlight-warn">基础视觉</span>（形状、追踪、空间）→ 最先发展的能力 → MLLMs 极弱<br>
+                        • <span class="highlight">语言理解</span> → 中期发展 → MLLMs 很强<br>
+                        • <span class="highlight-good">知识推理</span>（数学、专业知识）→ 最晚发展 → MLLMs 很强
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">为什么高级任务成功，基础任务失败？</div>
+                    <div class="note-content">
+                        <span class="highlight">语言先验的掩盖作用</span>：高级任务（数学、知识问答）可以通过语言推理"绕过"视觉，但基础视觉任务无法用语言知识替代。<br><br>
+                        <span class="highlight">训练数据的偏差</span>：大量训练数据是"图文对"，模型学会了用文字描述图像，却很少有训练数据要求纯视觉推理。<br><br>
+                        <span class="highlight-good">BABYVISION 的价值</span>：首个系统性评估"超越语言"视觉能力的基准测试。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 人类与模型对比图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Comparison of Human vs MLLMs Performance.jpg"
+                        alt="人类与 MLLMs 性能对比">
+                </div>
+                <div class="image-caption">
+                    震撼对比：最强模型 Gemini3-Pro-Preview 勉强与 3 岁儿童打成平手，远远落后于 6 岁儿童
+                </div>
+            </div>
+
+            <!-- 年龄对比可视化 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">与不同年龄人类的对比</div>
+                    <div class="note-content">
+                        <div class="age-comparison">
+                            <div class="age-bar">
+                                <div class="age-label">👶 3 岁儿童</div>
+                                <div class="age-bar-container">
+                                    <div class="age-bar-fill human" style="width: 40%">~40%</div>
+                                </div>
+                            </div>
+                            <div class="age-bar">
+                                <div class="age-label">🤖 Gemini3-Pro-Preview</div>
+                                <div class="age-bar-container">
+                                    <div class="age-bar-fill model" style="width: 45%">~45%</div>
+                                </div>
+                            </div>
+                            <div class="age-bar">
+                                <div class="age-label">🧒 6 岁儿童</div>
+                                <div class="age-bar-container">
+                                    <div class="age-bar-fill human" style="width: 65%">~65%</div>
+                                </div>
+                            </div>
+                            <div class="age-bar">
+                                <div class="age-label">👦 10 岁儿童</div>
+                                <div class="age-bar-container">
+                                    <div class="age-bar-fill human" style="width: 74%">~74%</div>
+                                </div>
+                            </div>
+                            <div class="age-bar">
+                                <div class="age-label">🧑 12 岁儿童</div>
+                                <div class="age-bar-container">
+                                    <div class="age-bar-fill human" style="width: 87%">~87%</div>
+                                </div>
+                            </div>
+                            <div class="age-bar">
+                                <div class="age-label">👨 成年人</div>
+                                <div class="age-bar-container">
+                                    <div class="age-bar-fill human" style="width: 94%">~94%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 警告框 -->
+            <div class="warning-box">
+                <div class="warning-title">核心发现：系统性的视觉能力缺陷</div>
+                <div class="warning-content">
+                    • 最强模型 Gemini3-Pro-Preview（49.7%）仍比<span class="highlight-warn">成人低 44.4%</span><br>
+                    • 所有模型在<span class="highlight-warn">视觉追踪</span>和<span class="highlight-warn">空间感知</span>上表现最差<br>
+                    • <span class="highlight-warn">Claude-4.5-Opus 和 Grok-4 甚至不如随机猜测</span>（25%）<br>
+                    • 这不是某一类任务的失败，而是<span class="highlight-warn">系统性的视觉能力缺陷</span>
+                </div>
+            </div>
+
+            <!-- BABYVISION 基准设计 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">BABYVISION 基准测试设计</div>
+                    <div class="note-content">
+                        设计哲学：<span class="highlight">最小化对语言知识的依赖，最大化对纯视觉感知的考察</span><br><br>
+                        <table class="comparison-table">
+                            <tr>
+                                <th>类别</th>
+                                <th>核心能力</th>
+                                <th>典型任务</th>
+                                <th>人类基准</th>
+                            </tr>
+                            <tr>
+                                <td><strong>Fine-grained Discrimination</strong><br>精细辨别</td>
+                                <td>观察非语言细节</td>
+                                <td>找相同/不同、数图案</td>
+                                <td class="best-result">92.3%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Visual Tracking</strong><br>视觉追踪</td>
+                                <td>流形理解</td>
+                                <td>连线追踪、迷宫</td>
+                                <td class="best-result">94.6%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Spatial Perception</strong><br>空间感知</td>
+                                <td>空间想象</td>
+                                <td>3D方块展开、视角转换</td>
+                                <td class="best-result">94.7%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Visual Pattern Recognition</strong><br>视觉模式识别</td>
+                                <td>模式归纳</td>
+                                <td>逻辑图案、旋转/镜像规律</td>
+                                <td class="best-result">97.8%</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 四大挑战 -->
+            <h2 style="text-align: center; margin: 40px 0 30px; color: #2c2c2c; font-size: 28px;">
+                🎯 四大挑战：MLLMs 为何失败？
+            </h2>
+
+            <div class="challenge-section">
+                <!-- 挑战 1 -->
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">1</div>
+                        <div>
+                            <div class="challenge-title">观察非语言细节</div>
+                            <div class="challenge-subtitle">Observing Non-Verbal Details</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>问题</strong>：MLLMs 难以从复杂图像中精确识别和比较细微的视觉差异。<br><br>
+                        <strong>典型任务</strong>：给定一个蜂窝图案，找出其中缺失的部分。<br><br>
+                        <strong>失败原因</strong>：
+                        <ul style="margin: 10px 0 0 20px; color: #666;">
+                            <li>无法精确计数密集排列的元素</li>
+                            <li>难以识别复杂图案中的空白区域</li>
+                            <li>缺乏对几何形状精确匹配的能力</li>
+                        </ul>
+                    </div>
+                    <div class="challenge-image">
+                        <img src="assets/images/Challenge 1 Observing Non-Verbal Details.png" alt="挑战1示例">
+                    </div>
+                    <div class="challenge-stats">
+                        <div class="challenge-stat">
+                            <div class="challenge-stat-value">92.3%</div>
+                            <div class="challenge-stat-label">人类表现</div>
+                        </div>
+                        <div class="challenge-stat">
+                            <div class="challenge-stat-value bad">46.2%</div>
+                            <div class="challenge-stat-label">最强模型</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 挑战 2 -->
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">2</div>
+                        <div>
+                            <div class="challenge-title">流形理解</div>
+                            <div class="challenge-subtitle">Manifold Understanding</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>问题</strong>：MLLMs 在追踪交织的线条时会"丢失身份"——当多条曲线相交时，模型无法正确判断哪条线通向哪里。<br><br>
+                        <strong>典型任务</strong>：追踪一条从起点到终点的曲线，即使它与其他线条多次相交。<br><br>
+                        <strong>失败原因</strong>：
+                        <ul style="margin: 10px 0 0 20px; color: #666;">
+                            <li><span class="highlight-warn">流形身份丢失</span>：在交叉点处错误切换到另一条线</li>
+                            <li>缺乏对曲线连续性的理解</li>
+                            <li>无法进行视觉上的"手指追踪"</li>
+                        </ul>
+                    </div>
+                    <div class="challenge-image">
+                        <img src="assets/images/Challenge 2 Manifold Understanding.png" alt="挑战2示例">
+                    </div>
+                    <div class="challenge-stats">
+                        <div class="challenge-stat">
+                            <div class="challenge-stat-value">94.6%</div>
+                            <div class="challenge-stat-label">人类表现</div>
+                        </div>
+                        <div class="challenge-stat">
+                            <div class="challenge-stat-value bad">43.4%</div>
+                            <div class="challenge-stat-label">最强模型</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 挑战 3 -->
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">3</div>
+                        <div>
+                            <div class="challenge-title">空间想象</div>
+                            <div class="challenge-subtitle">Spatial Imagination</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>问题</strong>：MLLMs 无法在脑海中对 3D 结构进行心理变换——旋转、展开、从不同角度观察。<br><br>
+                        <strong>典型任务</strong>：给定 3D 方块堆叠，判断从某个方向看会是什么形状。<br><br>
+                        <strong>失败原因</strong>：
+                        <ul style="margin: 10px 0 0 20px; color: #666;">
+                            <li><span class="highlight-warn">空间想象失败</span>：无法心理旋转 3D 物体</li>
+                            <li>缺乏对遮挡关系的理解</li>
+                            <li>无法将 2D 展开图映射回 3D 结构</li>
+                        </ul>
+                    </div>
+                    <div class="challenge-image">
+                        <img src="assets/images/Challenge 3 Spatial Imagination.png" alt="挑战3示例">
+                    </div>
+                    <div class="challenge-stats">
+                        <div class="challenge-stat">
+                            <div class="challenge-stat-value">94.7%</div>
+                            <div class="challenge-stat-label">人类表现</div>
+                        </div>
+                        <div class="challenge-stat">
+                            <div class="challenge-stat-value bad">53.7%</div>
+                            <div class="challenge-stat-label">最强模型</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 挑战 4 -->
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">4</div>
+                        <div>
+                            <div class="challenge-title">视觉模式归纳</div>
+                            <div class="challenge-subtitle">Visual Pattern Induction</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>问题</strong>：MLLMs 难以从视觉序列中归纳出潜在的变换规则，并预测下一个元素。<br><br>
+                        <strong>典型任务</strong>：观察一系列图形的变化规律（旋转、颜色交换等），预测下一个应该是什么。<br><br>
+                        <strong>失败原因</strong>：
+                        <ul style="margin: 10px 0 0 20px; color: #666;">
+                            <li>无法识别视觉元素的系统性变换</li>
+                            <li>难以建立"变化规则"的抽象表示</li>
+                            <li>缺乏对颜色、位置、方向的组合推理</li>
+                        </ul>
+                    </div>
+                    <div class="challenge-image">
+                        <img src="assets/images/Challenge 4 Visual Pattern Induction.png" alt="挑战4示例">
+                    </div>
+                    <div class="challenge-stats">
+                        <div class="challenge-stat">
+                            <div class="challenge-stat-value">97.8%</div>
+                            <div class="challenge-stat-label">人类表现</div>
+                        </div>
+                        <div class="challenge-stat">
+                            <div class="challenge-stat-value bad">53.9%</div>
+                            <div class="challenge-stat-label">最强模型</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 详细性能表 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Performance of Closed Source MLLMs on BabyVision.png"
+                        alt="闭源模型详细性能">
+                </div>
+                <div class="image-caption">
+                    闭源 MLLMs 在 BabyVision 各子任务上的详细性能：黄色高亮为各项最高分
+                </div>
+            </div>
+
+            <!-- 模型对比表格 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">各模型性能汇总</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>模型</th>
+                                <th>总分</th>
+                                <th>精细辨别</th>
+                                <th>视觉追踪</th>
+                                <th>空间感知</th>
+                                <th>模式识别</th>
+                            </tr>
+                            <tr class="best-result">
+                                <td><strong>Human</strong></td>
+                                <td><strong>94.1</strong></td>
+                                <td>92.3</td>
+                                <td>94.6</td>
+                                <td>94.7</td>
+                                <td>97.8</td>
+                            </tr>
+                            <tr>
+                                <td>Gemini3-Pro-Preview</td>
+                                <td>49.7</td>
+                                <td>46.2</td>
+                                <td>43.4</td>
+                                <td>53.7</td>
+                                <td>53.9</td>
+                            </tr>
+                            <tr>
+                                <td>GPT-5.2</td>
+                                <td>34.4</td>
+                                <td>27.3</td>
+                                <td>34.9</td>
+                                <td>35.2</td>
+                                <td>54.9</td>
+                            </tr>
+                            <tr>
+                                <td>Doubao-1.8</td>
+                                <td>30.2</td>
+                                <td>39.2</td>
+                                <td>15.7</td>
+                                <td>24.7</td>
+                                <td>37.7</td>
+                            </tr>
+                            <tr>
+                                <td>Qwen3-VL-Plus</td>
+                                <td>19.2</td>
+                                <td>21.8</td>
+                                <td>11.5</td>
+                                <td>18.1</td>
+                                <td>25.5</td>
+                            </tr>
+                            <tr class="warn-result">
+                                <td>Claude-4.5-Opus</td>
+                                <td>14.2</td>
+                                <td>14.3</td>
+                                <td>13.7</td>
+                                <td>12.8</td>
+                                <td>17.0</td>
+                            </tr>
+                            <tr class="warn-result">
+                                <td>Grok-4</td>
+                                <td>16.2</td>
+                                <td>11.0</td>
+                                <td>24.1</td>
+                                <td>13.2</td>
+                                <td>24.8</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 雷达图 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/These gaps relative to humans are consistent across categories.png"
+                        alt="各类别差距雷达图">
+                </div>
+                <div class="image-caption">
+                    雷达图：人类（黑色虚线）在所有 22 个子任务上都接近满分，而 MLLMs 在所有维度上都大幅塌缩
+                </div>
+            </div>
+
+            <!-- BABYVISION-GEN -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">BABYVISION-GEN：生成式视觉推理</div>
+                    <div class="note-content">
+                        人类解决视觉问题时，往往是<span class="highlight">用视觉来解决视觉</span>——画图、追踪、标记。<br><br>
+                        BABYVISION-GEN 要求模型不是输出文字答案，而是<span class="highlight-good">生成正确的图像</span>来展示答案。<br><br>
+                        <table class="comparison-table">
+                            <tr>
+                                <th>模型</th>
+                                <th>准确率</th>
+                            </tr>
+                            <tr>
+                                <td>Sora 2</td>
+                                <td class="warn-result">3.3%</td>
+                            </tr>
+                            <tr>
+                                <td>Veo 3</td>
+                                <td class="warn-result">5.6%</td>
+                            </tr>
+                            <tr>
+                                <td>BAGEL</td>
+                                <td class="warn-result">8.9%</td>
+                            </tr>
+                            <tr>
+                                <td>Nano-Banana (SOTA)</td>
+                                <td class="warn-result">13.3%</td>
+                            </tr>
+                        </table>
+                        <br>
+                        <span class="highlight-warn">结论</span>：即使是最先进的图像/视频生成模型，在视觉推理任务上也几乎完全失败。
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRPO 尝试 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">GRPO 强化学习尝试</div>
+                    <div class="note-content">
+                        论文尝试使用 <span class="highlight">GRPO（Group Relative Policy Optimization）</span> 对开源模型进行视觉推理强化学习：<br><br>
+                        <table class="comparison-table">
+                            <tr>
+                                <th>指标</th>
+                                <th>原始模型</th>
+                                <th>GRPO 后</th>
+                                <th>提升</th>
+                            </tr>
+                            <tr>
+                                <td>平均准确率</td>
+                                <td>13.1%</td>
+                                <td>17.9%</td>
+                                <td class="best-result">+4.8%</td>
+                            </tr>
+                        </table>
+                        <br>
+                        <span class="highlight">发现</span>：强化学习带来了一定提升，但距离人类水平仍有巨大差距。表明<span class="highlight-warn">视觉能力的根本缺陷难以通过后训练弥补</span>。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 与现有基准的区别 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">与现有基准的区别</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>基准</th>
+                                <th>核心考察</th>
+                                <th>可被语言绕过？</th>
+                            </tr>
+                            <tr>
+                                <td>MMMU</td>
+                                <td>大学级专业知识</td>
+                                <td>✅ 是</td>
+                            </tr>
+                            <tr>
+                                <td>MathVista</td>
+                                <td>数学推理</td>
+                                <td>部分</td>
+                            </tr>
+                            <tr>
+                                <td>MME</td>
+                                <td>多模态理解</td>
+                                <td>✅ 是</td>
+                            </tr>
+                            <tr>
+                                <td>BLINK</td>
+                                <td>视觉感知</td>
+                                <td>部分</td>
+                            </tr>
+                            <tr class="best-result">
+                                <td><strong>BABYVISION</strong></td>
+                                <td><strong>纯视觉推理</strong></td>
+                                <td><strong>❌ 否</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 对未来研究的启示 -->
+            <div class="insight-box">
+                <div class="insight-title">对未来研究的启示</div>
+                <div class="insight-content">
+                    <strong>1. 视觉能力不应被忽视</strong><br>
+                    当前 MLLM 的发展过于关注"更多知识"、"更强推理"，却忽略了最基础的视觉感知能力。<br><br>
+                    <strong>2. 需要新的训练范式</strong><br>
+                    加入更多纯视觉推理任务，减少对语言先验的依赖，从婴儿视觉发展中汲取灵感。<br><br>
+                    <strong>3. 架构创新的必要性</strong><br>
+                    当前的 Vision Transformer + LLM 架构可能存在根本局限：图像被切分为 patch，丢失了全局结构；视觉信息被强制映射到语言空间。
+                </div>
+            </div>
+
+            <!-- 类比理解 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">类比理解</div>
+                    <div class="note-content">
+                        <span class="highlight">MLLMs 像一个博览群书但从未睁眼看世界的人</span>：<br><br>
+                        📚 读过关于"苹果是红色的"，但从未真正看过苹果<br>
+                        🧩 知道"迷宫可以用右手法则解"，但无法真正追踪线条<br>
+                        🎲 学过"3D 物体可以旋转"，但无法在脑海中旋转<br><br>
+                        <span class="highlight-warn">BABYVISION 就是给它们做一次"视力检查"——结果是：近乎失明。</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 参考信息 -->
+            <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                <p style="color: #666; font-size: 14px;">
+                    基于 UniPat AI、Peking University、Tsinghua University 等机构联合发布的 BabyVision 研究论文 |
+                    <a href="https://arxiv.org/pdf/2601.06521v1" style="color: #ff6b6b; text-decoration: none;">论文原文</a>
+                    |
+                    <a href="https://unipat.ai/blog/BabyVision" style="color: #ff6b6b; text-decoration: none;">官方主页</a>
+                    |
+                    <a href="https://github.com/UniPat-AI/BabyVision" style="color: #ff6b6b; text-decoration: none;">GitHub 项目</a>
+                </p>
+            </div>
+
+            <!-- Logo区域 -->
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px;">
+                <a href="https://llm-arena.kcores.com" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; text-decoration: none;">
+                    <img src="assets/images/kcores-llm-arena-logo-black.png" alt="Kcores LLM Arena Logo"
+                        style="max-height: 60px; opacity: 0.8; transition: all 0.3s ease; cursor: pointer;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 卡片悬停效果
+        document.addEventListener('DOMContentLoaded', function () {
+            const noteCards = document.querySelectorAll('.note-card, .stat-note');
+
+            noteCards.forEach((card, index) => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'rotate(0deg) scale(1.02)';
+                    this.style.zIndex = '10';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    const isEven = Array.from(card.parentElement.children).indexOf(card) % 2 === 1;
+                    const is3n = (Array.from(card.parentElement.children).indexOf(card) + 1) % 3 === 0;
+                    if (is3n) {
+                        this.style.transform = 'rotate(-0.3deg)';
+                    } else if (isEven) {
+                        this.style.transform = 'rotate(0.5deg)';
+                    } else {
+                        this.style.transform = 'rotate(-0.5deg)';
+                    }
+                    this.style.zIndex = '1';
+                });
+            });
+
+            // 年龄条动画
+            const ageBars = document.querySelectorAll('.age-bar-fill');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.width = entry.target.getAttribute('style').match(/width:\s*(\d+%)/)[1];
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            ageBars.forEach(bar => {
+                const targetWidth = bar.style.width;
+                bar.style.width = '0%';
+                bar.dataset.targetWidth = targetWidth;
+                observer.observe(bar);
+            });
+
+            // 重新设置宽度动画
+            setTimeout(() => {
+                ageBars.forEach(bar => {
+                    bar.style.width = bar.dataset.targetWidth;
+                });
+            }, 500);
+        });
+
+        // 图片加载优化
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('load', function () {
+                this.style.opacity = '1';
+            });
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
+        });
+
+        // Logo悬停效果
+        const logoLink = document.querySelector('a[href="https://llm-arena.kcores.com"]');
+        const logo = document.querySelector('img[alt="Kcores LLM Arena Logo"]');
+        if (logoLink && logo) {
+            logoLink.addEventListener('mouseenter', function () {
+                logo.style.opacity = '1';
+                logo.style.transform = 'scale(1.05)';
+            });
+
+            logoLink.addEventListener('mouseleave', function () {
+                logo.style.opacity = '0.8';
+                logo.style.transform = 'scale(1)';
+            });
+        }
+    </script>
+</body>
+
+</html>
+
