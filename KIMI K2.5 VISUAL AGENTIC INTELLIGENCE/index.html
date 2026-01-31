@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIMI K2.5: 视觉智能体革命</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c2c2c;
+            background: linear-gradient(135deg, #f5f7ff 0%, #e8f0ff 50%, #f0f5ff 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe);
+        }
+
+        .card-content {
+            padding: 50px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* 便签笔记样式 */
+        .note-section {
+            margin-bottom: 40px;
+        }
+
+        .note-card {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .note-card:nth-child(even) {
+            background: #fff5f9;
+            border-color: #f093fb;
+            box-shadow: 0 4px 12px rgba(240, 147, 251, 0.2);
+            transform: rotate(0.5deg);
+        }
+
+        .note-card:nth-child(3n) {
+            background: #f0fcff;
+            border-color: #4facfe;
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.2);
+            transform: rotate(-0.3deg);
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '🤖';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 24px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-title::before {
+            content: '•';
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .note-content {
+            color: #444;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .note-content ul {
+            margin: 10px 0 0 20px;
+        }
+
+        .note-content li {
+            margin: 8px 0;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #c7d2fe 0%, #ddd6fe 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .highlight-warn {
+            background: linear-gradient(120deg, #fecaca 0%, #fca5a5 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #991b1b;
+        }
+
+        .highlight-good {
+            background: linear-gradient(120deg, #bbf7d0 0%, #86efac 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #166534;
+        }
+
+        .code-block {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        /* 对比表格 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .best-result {
+            background: #e8f5e9;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .warn-result {
+            background: #ffebee;
+            font-weight: 600;
+            color: #c62828;
+        }
+
+        /* 性能数据网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-note {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-note:nth-child(even) {
+            transform: rotate(1deg);
+            background: linear-gradient(135deg, #fff5f9 0%, #fce7f3 100%);
+            border-color: #f093fb;
+        }
+
+        .stat-note:nth-child(3) {
+            background: linear-gradient(135deg, #f0fcff 0%, #cffafe 100%);
+            border-color: #4facfe;
+        }
+
+        .stat-note:nth-child(4) {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #fbbf24;
+        }
+
+        .stat-note:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .stat-note:nth-child(even) .stat-number {
+            color: #c026d3;
+        }
+
+        .stat-note:nth-child(3) .stat-number {
+            color: #0284c7;
+        }
+
+        .stat-note:nth-child(4) .stat-number {
+            color: #d97706;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* 挑战卡片 */
+        .challenge-section {
+            margin: 40px 0;
+        }
+
+        .challenge-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #667eea;
+        }
+
+        .challenge-card:nth-child(even) {
+            border-left-color: #f093fb;
+        }
+
+        .challenge-card:nth-child(3) {
+            border-left-color: #4facfe;
+        }
+
+        .challenge-card:nth-child(4) {
+            border-left-color: #fbbf24;
+        }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .challenge-number {
+            background: linear-gradient(135deg, #667eea, #5568d3);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .challenge-card:nth-child(even) .challenge-number {
+            background: linear-gradient(135deg, #f093fb, #c026d3);
+        }
+
+        .challenge-card:nth-child(3) .challenge-number {
+            background: linear-gradient(135deg, #4facfe, #0284c7);
+        }
+
+        .challenge-card:nth-child(4) .challenge-number {
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+        }
+
+        .challenge-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c2c2c;
+        }
+
+        .challenge-subtitle {
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .challenge-content {
+            color: #444;
+            line-height: 1.8;
+        }
+
+        .challenge-content strong {
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* 图片区域样式 */
+        .image-section {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .image-caption {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+            padding: 0 20px;
+        }
+
+        /* 警告框 */
+        .warning-box {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border: 2px solid #e74c3c;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .warning-box::before {
+            content: '⚠️';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            font-size: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .warning-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #c0392b;
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+
+        .warning-content {
+            color: #7f1d1d;
+            line-height: 1.8;
+        }
+
+        /* 发现框 */
+        .insight-box {
+            background: linear-gradient(135deg, #e8f8f5 0%, #d1f2eb 100%);
+            border: 2px solid #27ae60;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .insight-box::before {
+            content: '💡';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            font-size: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .insight-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e8449;
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+
+        .insight-content {
+            color: #145a32;
+            line-height: 1.8;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-content {
+                padding: 30px 25px;
+            }
+
+            .title {
+                font-size: 36px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .note-card {
+                padding: 20px;
+                transform: rotate(0deg);
+            }
+
+            .note-card:hover {
+                transform: scale(1.02);
+            }
+
+            .comparison-table {
+                font-size: 12px;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 8px 10px;
+            }
+        }
+
+        .section-title {
+            text-align: center;
+            margin: 50px 0 30px;
+            color: #2c2c2c;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            margin: -20px 0 30px;
+            color: #666;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-card">
+        <div class="card-content">
+            <!-- 标题区域 -->
+            <div class="header-section">
+                <h1 class="title">KIMI K2.5</h1>
+                <p class="subtitle">Visual Agentic Intelligence — 视觉智能体革命</p>
+                <p class="description">
+                    Moonshot AI 开源的首个多模态智能体模型，标志着<span class="highlight">通用智能体(General Agentic Intelligence)</span>的重大突破。
+                    K2.5 实现了<span class="highlight-good">文本与视觉的联合优化</span>，让两种模态相互增强而非相互妥协。
+                    更令人惊艳的是其创新性的 <span class="highlight-good">Agent Swarm（智能体群）</span>框架——
+                    通过并行编排多个专业化子智能体，<span class="highlight">在广域搜索场景中将推理延迟降低高达 4.5 倍</span>，
+                    同时将 Item-F1 从 72.8% 提升至 79.0%。这一突破彻底改变了传统智能体"串行执行"的瓶颈。
+                </p>
+            </div>
+
+            <!-- 核心数据 -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">1.04T</div>
+                    <div class="stat-label">总参数量</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">15T</div>
+                    <div class="stat-label">预训练 Token 数</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">4.5x</div>
+                    <div class="stat-label">Agent Swarm 延迟降低</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">256K</div>
+                    <div class="stat-label">上下文长度</div>
+                </div>
+            </div>
+
+            <!-- 核心创新 -->
+            <h2 class="section-title">🚀 核心创新</h2>
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">文本与视觉的联合优化</div>
+                    <div class="note-content">
+                        K2.5 打破了传统多模态模型的"后融合"范式。以往的视觉-语言模型通常在文本 LLM 训练后期才引入视觉 Token，
+                        这种做法本质上是把多模态能力当作"附加功能"。<br><br>
+                        <span class="highlight-good">颠覆性发现</span>：通过大规模消融实验发现——<br>
+                        • <span class="highlight">早期以较低比例融合视觉，效果反而最佳</span><br>
+                        • 在固定总 Token 预算下，视觉比例对最终性能影响极小<br>
+                        • 早期融合让模型从一开始就学习统一的多模态表示空间<br>
+                        • 避免了后期"模态域迁移"造成的表示崩溃
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">Zero-Vision SFT：文本激活视觉能力</div>
+                    <div class="note-content">
+                        这是 K2.5 最违反直觉的创新之一：<span class="highlight-warn">在监督微调阶段，只用文本数据就能激活视觉推理和工具使用能力</span>。<br><br>
+                        <strong>为什么可行？</strong><br>
+                        • 预训练阶段已经建立了强大的视觉-文本对齐<br>
+                        • 能力可以自然地跨模态泛化<br>
+                        • 所有图像操作都通过 IPython 中的程序化操作代理<br>
+                        • 通过二值化和计数进行像素级操作（如物体尺寸估计）<br><br>
+                        <span class="highlight-good">实验表明</span>：零视觉 SFT 的泛化性能<strong>优于</strong>传统的文本-视觉联合 SFT。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">惊人发现：视觉 RL 提升文本能力</div>
+                    <div class="note-content">
+                        K2.5 在后训练阶段采用了联合 RL 策略，令人震惊的是：<span class="highlight-good">视觉 RL 不仅没有损害文本性能，反而显著提升了它</span>。<br><br>
+                        <strong>性能提升：</strong><br>
+                        • MMLU-Pro：84.7 → <strong>86.4</strong> (+1.7)<br>
+                        • GPQA-Diamond：84.3 → <strong>86.4</strong> (+2.1)<br>
+                        • LongBench v2：56.7 → <strong>58.9</strong> (+2.2)<br><br>
+                        <strong>原因分析：</strong><br>
+                        视觉 RL 增强了模型在结构化信息提取方面的校准能力，降低了对类似视觉定位推理的查询的不确定性。
+                        这表明<span class="highlight">视觉 RL 贡献了跨模态泛化能力，改善文本推理而不会退化语言能力</span>。
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Swarm 核心 -->
+            <h2 class="section-title">🐝 Agent Swarm：并行智能体编排</h2>
+            <p class="section-subtitle">彻底改变传统智能体"串行执行"的瓶颈</p>
+
+            <div class="insight-box">
+                <div class="insight-title">传统智能体的致命缺陷</div>
+                <div class="insight-content">
+                    传统智能体系统的致命缺陷是<strong>串行执行</strong>推理和工具调用步骤。
+                    即使是能进行数百步推理的系统（如 Kimi K2-Thinking），也受困于线性时间扩展，导致：<br>
+                    • 不可接受的延迟<br>
+                    • 任务复杂度受限<br>
+                    • 当智能体工作负载扩展到大规模研究、设计、开发等场景时，串行范式效率极低
+                </div>
+            </div>
+
+            <div class="challenge-section">
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">1</div>
+                        <div>
+                            <div class="challenge-title">Agent Swarm 架构</div>
+                            <div class="challenge-subtitle">Trainable Orchestrator + Frozen Subagents</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>核心设计：</strong><br>
+                        • <span class="highlight">可训练的编排器(Orchestrator)</span>：负责任务分解和调度<br>
+                        • <span class="highlight">冻结的子智能体(Frozen Subagents)</span>：从固定的中间策略检查点实例化<br>
+                        • <span class="highlight">动态任务分解</span>：将复杂任务拆解为异构子问题<br>
+                        • <span class="highlight">并行子任务调度</span>：子智能体并发执行<br><br>
+                        <strong>关键理念：</strong><br>
+                        并行性<strong>不是默认有利的</strong>——是否、何时、如何并行化，
+                        都是通过环境反馈和 RL 驱动的探索<span class="highlight-good">显式学习</span>的。
+                    </div>
+                    <div class="image-section">
+                        <div class="image-container">
+                            <img src="assets/images/An agent swarm has a trainable orchestrator that dynamically creates specialized frozen subagents and.png" 
+                                alt="Agent Swarm 架构图">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">2</div>
+                        <div>
+                            <div class="challenge-title">Parallel-Agent RL (PARL)</div>
+                            <div class="challenge-subtitle">解耦架构的智慧</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>为何解耦架构？</strong><br>
+                        避免端到端协同优化的两大挑战：<br>
+                        1. <span class="highlight-warn">信用分配模糊性</span>：正确答案不意味着所有子智能体执行完美<br>
+                        2. <span class="highlight-warn">训练不稳定性</span>：多智能体联合优化的梯度极不稳定<br><br>
+                        <strong>解决方案：</strong><br>
+                        • 冻结子智能体，将其输出视为<strong>环境观测</strong>而非可微决策点<br>
+                        • 解耦高层协调逻辑与低层执行熟练度<br>
+                        • 先用小型子智能体训练编排器，再过渡到大型模型<br><br>
+                        <strong>PARL 奖励函数：</strong><br>
+                        <div class="code-block">r_PARL(x, y) = λ₁ · r_parallel + λ₂ · r_finish + r_perf(x, y)
+              ⎣___________⎦   ⎣__________⎦   ⎣__________⎦
+              实例化奖励      子智能体完成率    任务级结果</div>
+                    </div>
+                    <div class="image-section">
+                        <div class="image-container">
+                            <img src="assets/images/In our parallel-agent reinforcement learning environment, the training accuracy increases smoothly as training progresses.png" 
+                                alt="并行智能体 RL 训练进展">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">3</div>
+                        <div>
+                            <div class="challenge-title">关键步数 (Critical Steps)</div>
+                            <div class="challenge-subtitle">显式激励有效并行化</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        类比计算图中的关键路径，定义并行智能体环境中的时间成本：<br><br>
+                        <div class="code-block">CriticalSteps = Σ[t=1 to T] (S_main^(t) + max_i S_sub,i^(t))</div>
+                        <strong>核心思想：</strong><br>
+                        • 每个阶段 t，主智能体执行 S_main^(t) 步<br>
+                        • 若并行启动多个子智能体，该阶段持续时间由<span class="highlight">最长运行的子智能体</span>决定<br>
+                        • 总关键步数 = 所有阶段的关键路径之和<br><br>
+                        <span class="highlight-good">效果</span>：
+                        通过约束关键步数而非总步数，框架显式激励有效并行化。
+                        良好平衡的任务分解可直接缩短关键步数。
+                    </div>
+                </div>
+
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">4</div>
+                        <div>
+                            <div class="challenge-title">Agent Swarm = 主动上下文管理</div>
+                            <div class="challenge-subtitle">超越传统反应式策略</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        Agent Swarm 本质上是<span class="highlight-good">多智能体架构赋能的主动式智能上下文管理</span>，
+                        区别于传统反应式策略（Hide-Tool-Result、Summary、Discard-all）。<br><br>
+                        <strong>主动式策略的优势：</strong><br>
+                        • 通过显式编排实现主动上下文控制<br>
+                        • 长期任务分解为并行、语义隔离的子任务<br>
+                        • 每个子智能体有界的局部上下文<br>
+                        • 诱导<span class="highlight">上下文分片</span>而非上下文截断<br>
+                        • 沿额外架构维度扩展有效上下文长度<br>
+                        • 保持模块化、信息局部性和推理完整性
+                    </div>
+                </div>
+            </div>
+
+            <!-- 性能提升 -->
+            <h2 class="section-title">📊 性能提升</h2>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">Agent Swarm 性能对比</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>基准</th>
+                                <th>K2.5 Agent Swarm</th>
+                                <th>K2.5 单智能体</th>
+                                <th>Claude Opus 4.5</th>
+                                <th>GPT-5.2</th>
+                            </tr>
+                            <tr>
+                                <td><strong>BrowseComp</strong></td>
+                                <td class="best-result">78.4</td>
+                                <td>60.6</td>
+                                <td>37.0</td>
+                                <td>65.8</td>
+                            </tr>
+                            <tr>
+                                <td><strong>WideSearch</strong></td>
+                                <td class="best-result">79.0</td>
+                                <td>72.7</td>
+                                <td>76.2</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>In-house Swarm Bench</strong></td>
+                                <td class="best-result">58.3</td>
+                                <td>41.6</td>
+                                <td>45.8</td>
+                                <td>-</td>
+                            </tr>
+                        </table>
+                        <br>
+                        <span class="highlight-good">关键发现</span>：<br>
+                        • BrowseComp：<strong>+17.8%</strong> 绝对提升，超越 GPT-5.2 Pro<br>
+                        • WideSearch：Item-F1 提升 <strong>+6.3%</strong>，建立新 SOTA<br>
+                        • In-house Swarm Bench：<strong>+16.7%</strong>（该基准显式奖励并行分解）
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Execution Time to Achieve a Target Item-F1.png"
+                        alt="执行时间对比">
+                </div>
+                <div class="image-caption">
+                    在 WideSearch 基准上，Agent Swarm 将达到目标性能的执行时间减少 3× ~ 4.5×
+                </div>
+            </div>
+
+            <!-- Token 高效强化学习 -->
+            <h2 class="section-title">⚡ Token 高效强化学习：Toggle 算法</h2>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">解决长度过拟合问题</div>
+                    <div class="note-content">
+                        <strong>问题：</strong>严格预算约束下训练的模型无法泛化到更高计算规模，默认截断推理模式。<br><br>
+                        <strong>Toggle 启发式算法：</strong>每 m 次迭代交替两个优化阶段：<br><br>
+                        <span class="highlight">Phase 0（预算限制阶段）</span>：<br>
+                        训练模型在任务相关 Token 预算内解决问题，仅当平均准确率超过阈值 λ 时强制执行（防止过早牺牲质量换效率）<br><br>
+                        <span class="highlight">Phase 1（标准扩展阶段）</span>：<br>
+                        模型生成响应直至最大 Token 限制，鼓励模型利用计算实现更好的推理时扩展<br><br>
+                        <span class="highlight-good">效果</span>：<br>
+                        • 在所有基准上输出长度平均减少 25~30%<br>
+                        • 性能影响可忽略不计<br>
+                        • 减少 CoT 中的冗余模式（重复验证、机械计算）<br>
+                        • 强域泛化：仅在数学和编程上训练，在 GPQA 和 MMLU-Pro 上也实现一致的 Token 减少
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Comparison of model performance and token usage for Kimi K2 Thinking following token-efficient RL.png"
+                        alt="Token 高效 RL 效果">
+                </div>
+                <div class="image-caption">
+                    Token 高效 RL 后的性能与 Token 使用对比：实现了效率与性能的完美平衡
+                </div>
+            </div>
+
+            <!-- 全面评估结果 -->
+            <h2 class="section-title">🏆 全面评估结果</h2>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">推理与通用能力</div>
+                    <div class="note-content">
+                        <strong>数学推理：</strong><br>
+                        • AIME 2025：<span class="highlight-good">96.1%</span>（接近 GPT-5.2 的满分，超越 Claude Opus 4.5 的 92.8%）<br>
+                        • HMMT 2025：<span class="highlight-good">95.4%</span><br>
+                        • IMO-AnswerBench：<span class="highlight-good">81.8%</span><br><br>
+                        <strong>知识与科学推理：</strong><br>
+                        • MMLU-Pro：<span class="highlight-good">87.1%</span><br>
+                        • GPQA-Diamond：<span class="highlight-good">87.6%</span><br>
+                        • SimpleQA Verified：36.9%<br><br>
+                        <strong>HLE（Humanity's Last Exam）：</strong><br>
+                        • 无工具：30.1%（文本 31.5%，图像 21.3%）<br>
+                        • <span class="highlight-good">启用工具：50.2%</span>（文本 51.8%，图像 39.8%）<br>
+                        • 显著超越 Gemini 3 Pro（45.8%）和 GPT-5.2（45.5%）<br><br>
+                        <strong>长上下文：</strong><br>
+                        • LongBench v2：<span class="highlight-good">61.0%</span>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">复杂编程与软件工程</div>
+                    <div class="note-content">
+                        • SWE-Bench Verified：<span class="highlight-good">76.8%</span><br>
+                        • SWE-Bench Multilingual：<span class="highlight-good">73.0%</span><br>
+                        • LiveCodeBench v6：<span class="highlight-good">85.0%</span>（超越 DeepSeekV3.2 的 83.3% 和 Claude Opus 4.5 的 82.2%）<br>
+                        • CyberGym：<span class="highlight-good">41.3</span>（在真实开源软件项目中仅根据高层描述查找已知漏洞）<br>
+                        • TerminalBench 2.0：<span class="highlight-good">50.8%</span><br>
+                        • PaperBench (CodeDev)：<span class="highlight-good">63.5%</span><br>
+                        • SciCode：<span class="highlight-good">48.7%</span>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">智能体能力</div>
+                    <div class="note-content">
+                        <strong>BrowseComp：</strong><br>
+                        • 无上下文管理：60.6%<br>
+                        • Discard-all 上下文管理：74.9%<br>
+                        • <span class="highlight-good">Agent Swarm：78.4%</span><br>
+                        • 大幅超越 GPT-5.2 报告的 65.8%<br>
+                        • 显著超越 Claude Opus 4.5（37.0%）和 Gemini 3 Pro（37.8%）<br><br>
+                        <strong>其他智能体基准：</strong><br>
+                        • WideSearch：72.7%（<span class="highlight-good">Agent Swarm：79.0%</span>）<br>
+                        • DeepSearchQA：<span class="highlight-good">77.1%</span><br>
+                        • FinSearchComp T2&T3：<span class="highlight-good">67.8%</span><br>
+                        • Seal-0：<span class="highlight-good">57.4%</span>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">视觉推理、知识与感知</div>
+                    <div class="note-content">
+                        <strong>视觉推理：</strong><br>
+                        • MMMU-Pro：<span class="highlight-good">78.5%</span><br>
+                        • MathVision：<span class="highlight-good">84.2%</span><br>
+                        • MathVista (mini)：<span class="highlight-good">90.1%</span><br>
+                        • BabyVision：36.5%<br><br>
+                        <strong>OCR 与文档理解：</strong><br>
+                        • OCRBench：<span class="highlight-good">92.3%</span><br>
+                        • InfoVQA (test)：<span class="highlight-good">92.6%</span><br>
+                        • OmniDocBench 1.5：<span class="highlight-good">88.8%</span><br>
+                        • CharXiv (RQ)：<span class="highlight-good">77.5%</span><br><br>
+                        <strong>视觉感知：</strong><br>
+                        • ZeroBench：9（无工具），<span class="highlight-good">11（有工具）</span><br>
+                        • BLINK：<span class="highlight-good">78.9%</span><br>
+                        • MMVP：<span class="highlight-good">87.0%</span>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">视频理解</div>
+                    <div class="note-content">
+                        • VideoMMMU：<span class="highlight-good">86.6%</span><br>
+                        • MMVU：<span class="highlight-good">80.4%</span><br>
+                        • MotionBench：<span class="highlight-good">70.4%</span><br>
+                        • Video-MME：<span class="highlight-good">87.4%</span><br>
+                        • LongVideoBench：<span class="highlight-good">79.8%</span>（SOTA）<br>
+                        • LVBench：<span class="highlight-good">75.9%</span>（SOTA，输入超过 2000 帧）
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">计算机使用能力</div>
+                    <div class="note-content">
+                        <strong>OSWorld-Verified：</strong><br>
+                        • <span class="highlight-good">63.3%</span>（仅依赖 GUI 操作，无外部工具）<br>
+                        • 大幅超越开源模型 Qwen3-VL-235B-A22B（38.1%）<br>
+                        • 超越 OpenAI Operator (o3-based)（42.9%）<br>
+                        • 接近 Claude Opus 4.5（66.3%）<br><br>
+                        <strong>WebArena：</strong><br>
+                        • <span class="highlight-good">58.9%</span><br>
+                        • 超越 OpenAI Operator（58.1%）<br>
+                        • 接近 Claude Opus 4.5（63.4%）
+                    </div>
+                </div>
+            </div>
+
+            <!-- 技术架构 -->
+            <h2 class="section-title">🏗️ 技术架构亮点</h2>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">MoonViT-3D：统一图像与视频</div>
+                    <div class="note-content">
+                        <strong>核心创新：</strong>将 NaViT 的"patch n' pack"理念扩展到时间维度。<br><br>
+                        <strong>工作原理：</strong><br>
+                        • 最多 4 个连续帧视为时空体<br>
+                        • 2D patch 从这些帧中联合展平并打包成单个 1D 序列<br>
+                        • 相同的注意力机制无缝地跨空间和时间运作<br>
+                        • 轻量级时间池化在 MLP 投影器前进行，产生 <strong>4× 时间压缩</strong><br><br>
+                        <span class="highlight-good">优势</span>：<br>
+                        • 完全共享参数和嵌入空间<br>
+                        • 从静态图像到动态视频的知识泛化最大化<br>
+                        • 无需专门的视频模块或架构分支<br>
+                        • 可处理长达 4 倍的视频（在相同上下文窗口内）
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">Decoupled Encoder Process (DEP)</div>
+                    <div class="note-content">
+                        <strong>问题：</strong>传统多模态训练中，视觉编码器和文本嵌入共处于流水线并行(PP)的第 0 阶段，
+                        由于多模态输入大小变化，Stage-0 面临计算负载剧烈波动和内存使用大幅变化。<br><br>
+                        <strong>DEP 三阶段解决方案：</strong><br>
+                        1. <span class="highlight">平衡视觉前向</span>：在所有 GPU 上复制小型视觉编码器，均匀分配计算<br>
+                        2. <span class="highlight">主干训练</span>：对主 Transformer 主干执行前向和反向传播<br>
+                        3. <span class="highlight">视觉重计算与反向</span>：重新计算视觉编码器前向传播并执行反向传播<br><br>
+                        <span class="highlight-good">效果</span>：<strong>多模态训练效率达到纯文本训练的 90%</strong>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">预训练数据的精心设计</div>
+                    <div class="note-content">
+                        <strong>文本数据增强：</strong><br>
+                        • 大幅增加仓库级代码（跨文件推理和架构理解）<br>
+                        • Issues、代码审查、提交历史（真实开发模式）<br>
+                        • 从 PDF 和网页语料库检索的代码相关文档<br><br>
+                        <strong>视觉数据（7 大类别）：</strong><br>
+                        1. Caption 数据：基础模态对齐<br>
+                        2. Image-Text Interleaving：来自书籍、网页、教程<br>
+                        3. OCR 数据：跨多语言文本、密集布局、多页文档<br>
+                        4. 知识数据：通过布局解析器处理的学术材料<br>
+                        5. 多模态问题解决语料库：STEM 领域（K-12 到大学）<br>
+                        6. 图像-代码配对数据：HTML、React、SVG 等代码格式<br>
+                        7. 智能体与时间理解：GUI 截图、动作轨迹、视频数据、<strong>新的轮廓级分割任务</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 对 AGI 的启示 -->
+            <h2 class="section-title">🌟 对 AGI 的启示</h2>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">1. 多模态不应是"附加功能"</div>
+                    <div class="note-content">
+                        <strong>传统做法：</strong><br>
+                        文本 LLM (强) → 后期加视觉 (妥协) → 多模态模型 (弱)<br><br>
+                        <strong>K2.5 的范式：</strong><br>
+                        文本 + 视觉 (从头联合) → 两者互相增强 → 多模态模型 (强)<br><br>
+                        <span class="highlight-good">启示</span>：
+                        真正的多模态 AGI 应该从一开始就以统一方式处理所有模态，而非"拼接"不同模态的专家。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">2. 串行智能体的天花板</div>
+                    <div class="note-content">
+                        <strong>瓶颈：</strong><br>
+                        • 任务复杂度 ∝ 串行步数<br>
+                        • 延迟 ∝ 串行步数<br>
+                        • 当步数 → 数百步时，延迟 → 不可接受<br><br>
+                        <strong>Agent Swarm 的突破：</strong><br>
+                        • 任务复杂度 ∝ 最长并行分支<br>
+                        • 延迟 ∝ max(各分支)，而非 Σ(各分支)<br>
+                        • 可扩展到极大规模任务<br><br>
+                        <span class="highlight-good">对 AGI 的意义</span>：
+                        未来的 AGI 系统必须具备<strong>动态编排多个专业化子系统并行工作</strong>的能力，
+                        这是处理真实世界复杂任务的必要条件。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">3. 跨模态能力迁移的潜力</div>
+                    <div class="note-content">
+                        <strong>K2.5 证明：</strong><br>
+                        • 文本 SFT → 激活视觉推理<br>
+                        • 视觉 RL → 增强文本能力<br><br>
+                        <strong>深层含义：</strong><br>
+                        • 人类智能也是高度整合的，各种能力相互支持<br>
+                        • AGI 应该追求<span class="highlight">统一的认知基础</span>，而非"模态专家的集合"<br>
+                        • 在一个领域的学习应该自然地泛化到其他领域<br><br>
+                        <span class="highlight-good">类比</span>：
+                        就像一个精通英语和法语的人（联合预训练），只需用英语例子（文本 SFT）学会编程，
+                        就能自然地用法语编程（视觉推理）。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">4. 从"单一模型"到"模型编排"</div>
+                    <div class="note-content">
+                        <strong>传统范式：</strong>更大的单一模型 → 更强的能力<br><br>
+                        <strong>Agent Swarm 的启示：</strong><br>
+                        • 编排多个专业化模型 > 单一巨型模型<br>
+                        • 关键是<strong>学习如何编排</strong><br>
+                        • 编排器 + 专业子智能体 = 新的架构范式<br><br>
+                        <span class="highlight-good">对 AGI 的意义</span>：
+                        未来的 AGI 可能不是"一个超级模型"，而是"一个超级编排器 + 大量专业化模型"的生态系统。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 局限性与未来方向 -->
+            <div class="warning-box">
+                <div class="warning-title">局限性与未来方向</div>
+                <div class="warning-content">
+                    <strong>当前局限：</strong><br>
+                    • BabyVision 性能 36.5%，虽超越多数模型，但仍远低于人类（94.1%）<br>
+                    • Agent Swarm 最适合可并行分解的任务，对串行依赖性强的任务收益有限<br>
+                    • 子智能体冻结，无法从编排器的反馈中学习改进<br>
+                    • MoE 架构虽激活参数少，但总参数达 1.04T<br><br>
+                    <strong>未来研究方向：</strong><br>
+                    • 更强的基础视觉能力（参考 BabyVision 基准）<br>
+                    • 动态子智能体创建（运行时动态生成/微调）<br>
+                    • 层次化 Agent Swarm（子智能体也可以是编排器）<br>
+                    • 端到端可训练的多智能体（解决信用分配和训练稳定性问题）<br>
+                    • 跨模态能力迁移的理论理解<br>
+                    • 更高效的并行化策略（自动学习最优的任务分解粒度）
+                </div>
+            </div>
+
+            <!-- 总结 -->
+            <div class="insight-box">
+                <div class="insight-title">总结</div>
+                <div class="insight-content">
+                    Kimi K2.5 代表了多模态智能体系统的重大突破。通过<strong>文本与视觉的深度联合优化</strong>，
+                    它证明了两种模态可以相互增强而非妥协。而 <strong>Agent Swarm</strong> 的创新则彻底改变了智能体的执行范式——
+                    从串行到并行，从单体到编排，为处理超大规模、高复杂度的真实世界任务开辟了全新的道路。<br><br>
+                    这不仅是一个技术突破，更是对未来 AGI 架构的重要启示：
+                    <span class="highlight-good">真正的智能不是单一巨型模型的独角戏，而是多个专业化智能体在智慧编排下的协同交响曲</span>。
+                </div>
+            </div>
+
+            <!-- 模型信息 -->
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">模型信息</div>
+                    <div class="note-content">
+                        <strong>团队：</strong>Kimi Team (Moonshot AI)<br>
+                        <strong>发表时间：</strong>2025 年<br>
+                        <strong>模型规模：</strong><br>
+                        • 总参数：1.04 万亿<br>
+                        • 激活参数：320 亿<br>
+                        • 专家数：384（每 Token 激活 8 个，稀疏度 48）<br><br>
+                        <strong>训练数据：</strong><br>
+                        • 预训练：15 万亿 Token（文本+视觉混合）<br>
+                        • 上下文长度：256K Token<br><br>
+                        <strong>核心技术：</strong><br>
+                        联合文本-视觉预训练 | Zero-Vision SFT | 联合多模态强化学习 | 
+                        Agent Swarm（并行智能体编排） | Parallel-Agent RL (PARL) | 
+                        Token 高效 RL (Toggle) | MoonViT-3D（统一图像-视频编码器）
+                    </div>
+                </div>
+            </div>
+
+            <!-- 参考信息 -->
+            <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                <p style="color: #666; font-size: 14px;">
+                    基于 Moonshot AI 发布的 KIMI K2.5 技术报告 |
+                    <a href="https://arxiv.org/abs/2507.20534" style="color: #667eea; text-decoration: none;">论文原文</a>
+                    |
+                    <a href="https://huggingface.co/moonshotai/Kimi-K2.5" style="color: #667eea; text-decoration: none;">模型权重</a>
+                    |
+                    <a href="https://moonshotai.github.io/KimiK2/thinking.html" style="color: #667eea; text-decoration: none;">Kimi K2 Thinking</a>
+                </p>
+            </div>
+
+            <!-- Logo区域 -->
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px;">
+                <a href="https://llm-arena.kcores.com" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; text-decoration: none;">
+                    <img src="assets/images/kcores-llm-arena-logo-black.png" alt="Kcores LLM Arena Logo"
+                        style="max-height: 60px; opacity: 0.8; transition: all 0.3s ease; cursor: pointer;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 卡片悬停效果
+        document.addEventListener('DOMContentLoaded', function () {
+            const noteCards = document.querySelectorAll('.note-card, .stat-note');
+
+            noteCards.forEach((card, index) => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'rotate(0deg) scale(1.02)';
+                    this.style.zIndex = '10';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    const isEven = Array.from(card.parentElement.children).indexOf(card) % 2 === 1;
+                    const is3n = (Array.from(card.parentElement.children).indexOf(card) + 1) % 3 === 0;
+                    if (is3n) {
+                        this.style.transform = 'rotate(-0.3deg)';
+                    } else if (isEven) {
+                        this.style.transform = 'rotate(0.5deg)';
+                    } else {
+                        this.style.transform = 'rotate(-0.5deg)';
+                    }
+                    this.style.zIndex = '1';
+                });
+            });
+
+            // 图片加载优化
+            document.querySelectorAll('img').forEach(img => {
+                img.addEventListener('load', function () {
+                    this.style.opacity = '1';
+                });
+                img.style.opacity = '0';
+                img.style.transition = 'opacity 0.3s ease';
+            });
+
+            // Logo悬停效果
+            const logoLink = document.querySelector('a[href="https://llm-arena.kcores.com"]');
+            const logo = document.querySelector('img[alt="Kcores LLM Arena Logo"]');
+            if (logoLink && logo) {
+                logoLink.addEventListener('mouseenter', function () {
+                    logo.style.opacity = '1';
+                    logo.style.transform = 'scale(1.05)';
+                });
+
+                logoLink.addEventListener('mouseleave', function () {
+                    logo.style.opacity = '0.8';
+                    logo.style.transform = 'scale(1)';
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
+
