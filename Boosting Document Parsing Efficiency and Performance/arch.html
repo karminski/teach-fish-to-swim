@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaddleOCR-VL Architecture Diagram</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);font-family:system-ui,sans-serif}
+canvas{border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.12)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const W = 1500, H = 1500;
+const cv = document.getElementById('c');
+const dpr = window.devicePixelRatio || 1;
+cv.width = W * dpr; cv.height = H * dpr;
+cv.style.width = W + 'px'; cv.style.height = H + 'px';
+const ctx = cv.getContext('2d');
+ctx.scale(dpr, dpr);
+
+const F = (s, w) => (w ? 'bold ' : '') + s + 'px system-ui,-apple-system,sans-serif';
+
+function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+}
+
+function drawRR(x, y, w, h, r, fill, stroke, lw) {
+    rr(x, y, w, h, r);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
+}
+
+function arrow(x1, y1, x2, y2, color, lw) {
+    const c = color || '#475569', l = lw || 2;
+    const a = Math.atan2(y2-y1, x2-x1), hl = 9;
+    ctx.strokeStyle = c; ctx.lineWidth = l;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.fillStyle = c; ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - hl*Math.cos(a-Math.PI/6), y2 - hl*Math.sin(a-Math.PI/6));
+    ctx.lineTo(x2 - hl*Math.cos(a+Math.PI/6), y2 - hl*Math.sin(a+Math.PI/6));
+    ctx.closePath(); ctx.fill();
+}
+
+function dashedArrow(x1, y1, x2, y2, color, lw) {
+    const c = color || '#94a3b8', l = lw || 1.5;
+    const a = Math.atan2(y2-y1, x2-x1), hl = 7;
+    ctx.strokeStyle = c; ctx.lineWidth = l;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = c; ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - hl*Math.cos(a-Math.PI/6), y2 - hl*Math.sin(a-Math.PI/6));
+    ctx.lineTo(x2 - hl*Math.cos(a+Math.PI/6), y2 - hl*Math.sin(a+Math.PI/6));
+    ctx.closePath(); ctx.fill();
+}
+
+function txt(str, x, y, font, color, align, bl, mw) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || 'center';
+    ctx.textBaseline = bl || 'middle';
+    mw ? ctx.fillText(str, x, y, mw) : ctx.fillText(str, x, y);
+}
+
+function drawFlowRow(defs, y, h, x0, x1, opts) {
+    opts = opts || {};
+    const tw = defs.reduce((s,b) => s+b.w, 0);
+    const gap = defs.length > 1 ? (x1-x0-tw)/(defs.length-1) : 0;
+    let x = x0;
+    for (const b of defs) { b.x = Math.round(x); b.y = y; b.h = h; b.cx = b.x+b.w/2; b.cy = y+h/2; x += b.w+gap; }
+    const ac = opts.arrowColor || '#475569';
+    for (let i = 0; i < defs.length-1; i++) {
+        const b = defs[i], n = defs[i+1];
+        arrow(b.x+b.w+3, b.cy, n.x-3, n.cy, ac, 2);
+    }
+    const mf = opts.mainFont || 13, sf = opts.subFont || 10.5;
+    for (const b of defs) {
+        drawRR(b.x, b.y, b.w, b.h, 8, b.bg||'#fff', b.border||'#94a3b8', 2);
+        if (b.sub) {
+            txt(b.main, b.cx, b.cy-9, F(mf, true), b.mc||'#1e293b', 'center', 'middle', b.w-16);
+            txt(b.sub, b.cx, b.cy+9, F(sf), b.sc||'#64748b', 'center', 'middle', b.w-16);
+        } else {
+            txt(b.main, b.cx, b.cy, F(mf, true), b.mc||'#1e293b', 'center', 'middle', b.w-16);
+        }
+    }
+    return defs;
+}
+
+function drawGrid(x, y, w, h, rows, cols, cellFill, borderColor) {
+    const cw = w/cols, ch = h/rows;
+    for (let r = 0; r < rows; r++)
+        for (let c = 0; c < cols; c++) {
+            ctx.fillStyle = cellFill; ctx.fillRect(x+c*cw+.5, y+r*ch+.5, cw-1, ch-1);
+        }
+    ctx.strokeStyle = borderColor||'#94a3b8'; ctx.lineWidth = 1; ctx.strokeRect(x, y, w, h);
+    for (let r = 1; r < rows; r++) { ctx.beginPath(); ctx.moveTo(x, y+r*ch); ctx.lineTo(x+w, y+r*ch); ctx.stroke(); }
+    for (let c = 1; c < cols; c++) { ctx.beginPath(); ctx.moveTo(x+c*cw, y); ctx.lineTo(x+c*cw, y+h); ctx.stroke(); }
+}
+
+function drawDocIcon(x, y, w, h) {
+    drawRR(x, y, w, h, 3, '#fff', '#94a3b8', 1.5);
+    ctx.fillStyle = '#cbd5e1';
+    for (let i = 0; i < 5; i++) ctx.fillRect(x+5, y+5+i*((h-10)/5), w-10-(i===2?8:0), 2.5);
+}
+
+function drawDocWithBoxes(x, y, w, h) {
+    drawRR(x, y, w, h, 3, '#fff', '#94a3b8', 1.5);
+    const colors = ['#bbf7d0','#bfdbfe','#fde68a','#fbcfe8','#c4b5fd'];
+    const rects = [[4,4,w-8,h*0.18],[4,h*0.25,w*0.55,h*0.35],[w*0.6,h*0.25,w-8-w*0.6,h*0.15],[w*0.6,h*0.45,w-8-w*0.6,h*0.15],[4,h*0.65,w-8,h*0.28]];
+    rects.forEach((r,i) => { ctx.fillStyle = colors[i]; ctx.fillRect(x+r[0],y+r[1],r[2],r[3]); ctx.strokeStyle=colors[i].replace('f','9'); ctx.lineWidth=1; ctx.strokeRect(x+r[0],y+r[1],r[2],r[3]); });
+}
+
+// ========================
+// BACKGROUND
+// ========================
+ctx.fillStyle = '#ffffff';
+ctx.fillRect(0, 0, W, H);
+
+// Subtle top gradient bar
+const tg = ctx.createLinearGradient(0,0,W,0);
+tg.addColorStop(0,'#059669'); tg.addColorStop(0.35,'#0d9488'); tg.addColorStop(0.65,'#06b6d4'); tg.addColorStop(1,'#3b82f6');
+ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 5);
+
+// ========================
+// TITLE
+// ========================
+txt('PaddleOCR-VL: Coarse-to-Fine Document Parsing Architecture', W/2, 35, F(25, true), '#0f172a');
+txt('CVPR 2026 · 0.9B Parameters · Two-Stage Framework', W/2, 58, F(13), '#64748b');
+
+// ========================
+// OVERALL PIPELINE
+// ========================
+drawRR(50, 75, 1400, 185, 14, '#f8fafc', '#e2e8f0', 1.5);
+txt('Overall Pipeline', 80, 92, F(15, true), '#334155', 'left', 'middle');
+
+const ovBoxes = drawFlowRow([
+    { w:148, main:'Document Image', sub:'Input', bg:'#f8fafc', border:'#94a3b8' },
+    { w:215, main:'Stage 1: VRFM', sub:'Layout + Reading Order', bg:'#dcfce7', border:'#16a34a', mc:'#166534' },
+    { w:188, main:'Valid Regions', sub:'+ Reading Order', bg:'#f0fdf4', border:'#86efac', mc:'#166534' },
+    { w:215, main:'Stage 2: VL-0.9B', sub:'Element Recognition', bg:'#ffedd5', border:'#ea580c', mc:'#9a3412' },
+    { w:162, main:'Structured Output', sub:'Markdown / JSON', bg:'#f8fafc', border:'#94a3b8' },
+], 115, 72, 80, 1420);
+
+// Small doc icon near first box
+drawDocIcon(ovBoxes[0].x+10, ovBoxes[0].y+10, 30, 38);
+
+// ========================
+// STAGE 1: VRFM
+// ========================
+drawRR(50, 280, 1400, 600, 14, '#f0fdf4', '#a7f3d0', 1.5);
+
+// Stage 1 header bar
+drawRR(50, 280, 1400, 38, 14, '#059669', null, 0);
+ctx.save(); rr(50,280,1400,38,14); ctx.clip();
+ctx.fillStyle = '#059669'; ctx.fillRect(50,280,1400,38);
+ctx.restore();
+txt('Stage 1: Valid Region Focus Module (VRFM)', 80, 299, F(16, true), '#ffffff', 'left', 'middle');
+txt('Lightweight Layout Analysis + Reading Order Prediction', 1420, 299, F(11), 'rgba(255,255,255,0.8)', 'right', 'middle');
+
+// --- GREEN: Layout Detection ---
+drawRR(65, 330, 1370, 150, 10, '#dcfce7', '#16a34a', 1.5);
+txt('Layout Detection Pipeline', 85, 345, F(12, true), '#166534', 'left', 'middle');
+
+const greenBoxes = drawFlowRow([
+    { w:108, main:'Document', bg:'#fff', border:'#16a34a' },
+    { w:125, main:'RT-DETR', sub:'Backbone', bg:'#fff', border:'#16a34a' },
+    { w:170, main:'Bounding Boxes', sub:'+ Class Labels', bg:'#fff', border:'#16a34a' },
+    { w:195, main:'Feature Encoding', sub:'Coord Enc + Class Emb', bg:'#fff', border:'#16a34a' },
+    { w:195, main:'Pointer Network', sub:'Transformer ×6 → Head', bg:'#f0fdf4', border:'#059669', mc:'#059669' },
+    { w:170, main:'Post Process', sub:'Order Decoding', bg:'#f0fdf4', border:'#059669', mc:'#059669' },
+    { w:165, main:'Ordered Boxes', sub:'+ Reading Order', bg:'#fff', border:'#16a34a' },
+], 360, 50, 82, 1418, {arrowColor:'#16a34a', mainFont:12, subFont:9.5});
+
+// Subtle background grids as visual indicators (semi-transparent)
+ctx.globalAlpha = 0.15;
+drawGrid(greenBoxes[3].x+10, greenBoxes[3].y+4, greenBoxes[3].w-20, greenBoxes[3].h-8, 4, 6, '#a7f3d0', '#16a34a');
+drawGrid(greenBoxes[6].x+10, greenBoxes[6].y+4, greenBoxes[6].w-20, greenBoxes[6].h-8, 3, 4, '#a7f3d0', '#16a34a');
+ctx.globalAlpha = 1;
+
+// --- BLUE: Pointer Network Detail ---
+drawRR(65, 498, 1370, 148, 10, '#dbeafe', '#2563eb', 1.5);
+txt('Pointer Network Detail (Reading Order Prediction)', 85, 513, F(12, true), '#1e40af', 'left', 'middle');
+
+// Dashed arrow from green "Pointer Network" box to blue section
+dashedArrow(greenBoxes[4].cx, greenBoxes[4].y+greenBoxes[4].h+2, greenBoxes[4].cx, 498, '#059669', 1.5);
+txt('detail ↓', greenBoxes[4].cx+30, 488, F(9), '#059669', 'left', 'middle');
+
+const blueBoxes = drawFlowRow([
+    { w:148, main:'Hidden Feature', sub:'(N, Hidden Size)', bg:'#fff', border:'#2563eb' },
+    { w:105, main:'Linear', bg:'#fff', border:'#2563eb' },
+    { w:170, main:'Q, K Projections', sub:'(N, H) each', bg:'#fff', border:'#2563eb' },
+    { w:148, main:'Dot Product', sub:'QKᵀ → (N, N)', bg:'#fff', border:'#2563eb' },
+    { w:135, main:'Triple Mask', sub:'Filter Invalid', bg:'#fff', border:'#2563eb' },
+    { w:188, main:'Relative-Order Logits', sub:'(N, N) Pairwise Scores', bg:'#eff6ff', border:'#1d4ed8', mc:'#1d4ed8' },
+], 530, 50, 82, 1418, {arrowColor:'#2563eb', mainFont:12, subFont:9.5});
+
+// Subtle background grids
+ctx.globalAlpha = 0.12;
+drawGrid(blueBoxes[0].x+10, blueBoxes[0].y+4, blueBoxes[0].w-20, blueBoxes[0].h-8, 3, 6, '#93c5fd', '#2563eb');
+drawGrid(blueBoxes[5].x+10, blueBoxes[5].y+4, blueBoxes[5].w-20, blueBoxes[5].h-8, 4, 4, '#93c5fd', '#1d4ed8');
+ctx.globalAlpha = 1;
+
+// --- PINK: Order Decoding Detail ---
+drawRR(65, 665, 1370, 148, 10, '#fce7f3', '#db2777', 1.5);
+txt('Win-Accumulation Order Decoding', 85, 680, F(12, true), '#9d174d', 'left', 'middle');
+
+// Blue → Pink flow connector
+dashedArrow(W/2, 648, W/2, 663, '#64748b', 1.5);
+txt('Logits → Decode', W/2, 656, F(8.5), '#64748b');
+
+const pinkBoxes = drawFlowRow([
+    { w:155, main:'Order Logits', sub:'(N, N) Matrix', bg:'#fff', border:'#db2777' },
+    { w:108, main:'Sigmoid', sub:'→ [0, 1]', bg:'#fff', border:'#db2777' },
+    { w:148, main:'Binary Matrix', sub:'Pairwise Order', bg:'#fff', border:'#db2777' },
+    { w:178, main:'Win-Accumulation', sub:'Complete Matrix + Sum', bg:'#fff', border:'#db2777' },
+    { w:108, main:'Argsort', sub:'Rank by Wins', bg:'#fff', border:'#db2777' },
+    { w:178, main:'Reading Order', sub:'[3, 4, 0, 2, 1]', bg:'#fdf2f8', border:'#be185d', mc:'#be185d' },
+], 698, 48, 82, 1418, {arrowColor:'#db2777', mainFont:12, subFont:9.5});
+
+// Subtle background grids
+ctx.globalAlpha = 0.12;
+drawGrid(pinkBoxes[0].x+10, pinkBoxes[0].y+4, pinkBoxes[0].w-20, pinkBoxes[0].h-8, 4, 4, '#fbcfe8', '#db2777');
+drawGrid(pinkBoxes[2].x+10, pinkBoxes[2].y+4, pinkBoxes[2].w-20, pinkBoxes[2].h-8, 4, 4, '#f9a8d4', '#db2777');
+ctx.globalAlpha = 1;
+
+// ========================
+// TRANSITION: Stage 1 → Stage 2
+// ========================
+const transY = 882;
+arrow(W/2, transY, W/2, transY+27, '#475569', 2);
+ctx.save();
+drawRR(W/2-130, transY+5, 260, 20, 10, '#f1f5f9', '#cbd5e1', 1);
+txt('Crop valid regions → Feed to VLM', W/2, transY+15, F(10, true), '#475569');
+ctx.restore();
+
+// ========================
+// STAGE 2: PaddleOCR-VL-0.9B
+// ========================
+drawRR(50, 912, 1400, 560, 14, '#fff7ed', '#fdba74', 1.5);
+
+// Stage 2 header bar
+ctx.save(); rr(50,912,1400,38,14); ctx.clip();
+ctx.fillStyle = '#ea580c'; ctx.fillRect(50,912,1400,38);
+ctx.restore();
+drawRR(50, 912, 1400, 38, 14, null, '#ea580c', 0);
+txt('Stage 2: PaddleOCR-VL-0.9B (Element Recognition)', 80, 931, F(16, true), '#ffffff', 'left', 'middle');
+txt('0.9B Parameters · Native Dynamic Resolution · 109 Languages', 1420, 931, F(11), 'rgba(255,255,255,0.8)', 'right', 'middle');
+
+// --- ORANGE: VLM Architecture ---
+drawRR(65, 960, 1370, 120, 10, '#ffedd5', '#ea580c', 1.5);
+txt('Vision-Language Model Architecture', 85, 975, F(12, true), '#9a3412', 'left', 'middle');
+
+const orangeBoxes = drawFlowRow([
+    { w:148, main:'Cropped Region', sub:'Valid Area', bg:'#fff', border:'#ea580c' },
+    { w:210, main:'NaViT Vision Encoder', sub:'Keye-VL · Dynamic Resolution', bg:'#fff', border:'#ea580c' },
+    { w:178, main:'MLP Projector', sub:'2-Layer + GELU', bg:'#fff', border:'#ea580c' },
+    { w:210, main:'ERNIE-4.5-0.3B', sub:'3D-RoPE · Language Model', bg:'#fff', border:'#ea580c' },
+    { w:168, main:'Recognition Output', sub:'Text / Structure', bg:'#fff7ed', border:'#c2410c', mc:'#c2410c' },
+], 990, 52, 82, 1418, {arrowColor:'#ea580c', mainFont:12, subFont:9.5});
+
+// Subtle background textures for VLM boxes
+ctx.globalAlpha = 0.12;
+drawGrid(orangeBoxes[1].x+10, orangeBoxes[1].y+4, orangeBoxes[1].w-20, orangeBoxes[1].h-8, 3, 5, '#fed7aa', '#ea580c');
+drawGrid(orangeBoxes[3].x+10, orangeBoxes[3].y+4, orangeBoxes[3].w-20, orangeBoxes[3].h-8, 3, 5, '#fed7aa', '#ea580c');
+ctx.globalAlpha = 1;
+
+// --- OUTPUT TYPES ---
+txt('Fine-Tuning Tasks & SOTA Results', W/2, 1098, F(14, true), '#78350f');
+
+const outputDefs = [
+    {
+        title: 'OCR Text Recognition', header: '#2563eb', bg: '#eff6ff', border: '#3b82f6',
+        metric: '0.035', metricLabel: 'Edit Distance ↓', metricColor: '#1d4ed8',
+        lines: [
+            'SOTA across all 9 doc types',
+            'PPT: 0.049 · Academic: 0.021',
+            'Book: 0.047 · Magazine: 0.020',
+            'Newspaper: 0.035 · Note: 0.077',
+            'Supports 109 languages',
+            'Surpasses Qwen2.5-VL-72B',
+        ]
+    },
+    {
+        title: 'Table Recognition', header: '#16a34a', bg: '#f0fdf4', border: '#22c55e',
+        metric: '0.9046', metricLabel: 'Overall TEDS ↑', metricColor: '#15803d',
+        lines: [
+            'Structural TEDS: 0.9420',
+            'Edit Distance: 0.0681',
+            'Output: OTSL format',
+            '512 tables evaluated',
+            'Beats MinerU2.5 (0.9005)',
+            'Beats dots.ocr (0.8194)',
+        ]
+    },
+    {
+        title: 'Formula Recognition', header: '#7c3aed', bg: '#faf5ff', border: '#a855f7',
+        metric: '0.9404', metricLabel: 'CDM Score ↑ (SOTA)', metricColor: '#6d28d9',
+        lines: [
+            'EN CDM: 0.9773',
+            'ZH CDM: 0.9035',
+            'Inline \\(...\\) & Display \\[...\\]',
+            'Output: LaTeX format',
+            '+2.17 pts vs MinerU2.5',
+            'Strong Chinese formula ability',
+        ]
+    },
+    {
+        title: 'Chart Recognition', header: '#ea580c', bg: '#fff7ed', border: '#f97316',
+        metric: '0.8440', metricLabel: 'RMS-F1 ↑', metricColor: '#c2410c',
+        lines: [
+            'EN: 0.8222 · ZH: 0.8549',
+            '11 chart categories',
+            '1,801 evaluation samples',
+            'Output: Markdown table',
+            'Surpasses Qwen2.5-VL-72B',
+            '(0.7300 → 0.8440, +15.6%)',
+        ]
+    }
+];
+
+const cardW = 290, cardH = 330, cardY = 1118;
+const cardGap = (1340 - 4*cardW) / 3;
+outputDefs.forEach((d, i) => {
+    const cx = 80 + i*(cardW+cardGap);
+    // Card body
+    drawRR(cx, cardY, cardW, cardH, 10, '#fff', d.border, 2);
+    // Header
+    ctx.save(); rr(cx, cardY, cardW, cardH, 10); ctx.clip();
+    ctx.fillStyle = d.header; ctx.fillRect(cx, cardY, cardW, 38);
+    ctx.restore();
+    drawRR(cx, cardY, cardW, cardH, 10, null, d.border, 2);
+    // Header text
+    txt(d.title, cx+cardW/2, cardY+19, F(12, true), '#fff');
+    // Metric label
+    txt(d.metricLabel, cx+cardW/2, cardY+56, F(10), '#64748b');
+    // Metric value
+    txt(d.metric, cx+cardW/2, cardY+84, F(28, true), d.metricColor);
+    // Divider
+    ctx.strokeStyle = d.border; ctx.lineWidth = 1; ctx.globalAlpha = 0.4;
+    ctx.beginPath(); ctx.moveTo(cx+20, cardY+105); ctx.lineTo(cx+cardW-20, cardY+105); ctx.stroke();
+    ctx.globalAlpha = 1;
+    // Detail lines
+    d.lines.forEach((line, li) => {
+        txt(line, cx+cardW/2, cardY+125+li*25, F(10.5), '#475569', 'center', 'middle', cardW-24);
+    });
+    // Small colored indicator dot
+    ctx.fillStyle = d.header;
+    ctx.beginPath(); ctx.arc(cx+cardW/2, cardY+cardH-18, 4, 0, Math.PI*2); ctx.fill();
+});
+
+// ========================
+// CONNECTING ELEMENTS
+// ========================
+
+// Overall box 2 → Stage 1
+dashedArrow(ovBoxes[1].cx, ovBoxes[1].y+ovBoxes[1].h+2, ovBoxes[1].cx, 280, '#16a34a', 1);
+
+// Overall box 4 → Stage 2 (right-side path avoiding Stage 1)
+ctx.save();
+ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+ctx.beginPath();
+ctx.moveTo(ovBoxes[3].cx, ovBoxes[3].y+ovBoxes[3].h+2);
+ctx.lineTo(ovBoxes[3].cx, 266);
+ctx.lineTo(1458, 266);
+ctx.lineTo(1458, 930);
+ctx.stroke();
+ctx.setLineDash([]);
+ctx.fillStyle = '#ea580c'; ctx.beginPath();
+ctx.moveTo(1458, 930); ctx.lineTo(1452, 920); ctx.lineTo(1464, 920);
+ctx.closePath(); ctx.fill();
+ctx.restore();
+
+// ========================
+// FOOTER
+// ========================
+txt('PaddleOCR-VL Architecture · CVPR 2026 Submission #7352 · Coarse-to-Fine Document Parsing', W/2, H-18, F(10), '#94a3b8');
+
+// ========================
+// DECORATIVE: Section Numbers
+// ========================
+function drawBadge(x, y, text, bg, color) {
+    const tw = ctx.measureText ? 40 : 40;
+    drawRR(x-20, y-12, 40, 24, 12, bg, null, 0);
+    txt(text, x, y, F(11, true), color);
+}
+
+// ========================
+// LEGEND (below pink section, inside Stage 1)
+// ========================
+const lgY = 822;
+txt('VRFM Training: ① RT-DETR core → 100 epochs (layout detection)  ② Freeze core, Pointer Network → 200 epochs (GCE Loss, AdamW, LR 2e-4)', 85, lgY, F(9.5), '#475569', 'left', 'middle');
+
+// Key insight badge
+drawRR(85, lgY+14, 620, 28, 6, '#ecfdf5', '#86efac', 1);
+txt('💡 Valid visual regions < 50% on average → 0.9B params outperforms 72B VLMs with 2485 vision tokens', 95, lgY+28, F(9.5, true), '#059669', 'left', 'middle');
+
+// Data badge
+drawRR(730, lgY+14, 690, 28, 6, '#f0fdf4', '#a7f3d0', 1);
+txt('Training Data: 29M (Stage 1 pretrain) + 2.7M (Stage 2 finetune) · 30M+ total samples · Seq length: 16384', 740, lgY+28, F(9.5), '#475569', 'left', 'middle');
+
+</script>
+</body>
+</html>

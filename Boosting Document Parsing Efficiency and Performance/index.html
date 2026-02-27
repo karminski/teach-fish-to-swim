@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaddleOCR-VL: 粗到细视觉处理提升文档解析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c2c2c;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdf4 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .main-card {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #059669, #0d9488, #06b6d4, #3b82f6);
+        }
+
+        .card-content {
+            padding: 50px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #059669, #0d9488);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .description {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .note-section {
+            margin-bottom: 40px;
+        }
+
+        .note-card {
+            background: #f0fdf4;
+            border: 2px solid #059669;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .note-card:nth-child(even) {
+            background: #f0fdfa;
+            border-color: #0d9488;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+            transform: rotate(0.5deg);
+        }
+
+        .note-card:nth-child(3n) {
+            background: #ecfeff;
+            border-color: #06b6d4;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+            transform: rotate(-0.3deg);
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '📄';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 24px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-title::before {
+            content: '•';
+            color: #059669;
+            font-size: 24px;
+        }
+
+        .note-content {
+            color: #444;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .note-content ul {
+            margin: 10px 0 0 20px;
+        }
+
+        .note-content li {
+            margin: 8px 0;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a7f3d0 0%, #6ee7b7 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #065f46;
+        }
+
+        .highlight-warn {
+            background: linear-gradient(120deg, #fecaca 0%, #fca5a5 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #991b1b;
+        }
+
+        .highlight-good {
+            background: linear-gradient(120deg, #bbf7d0 0%, #86efac 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #166534;
+        }
+
+        .highlight-blue {
+            background: linear-gradient(120deg, #bae6fd 0%, #7dd3fc 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #075985;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #059669, #0d9488);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .best-result {
+            background: #e8f5e9;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .warn-result {
+            background: #ffebee;
+            font-weight: 600;
+            color: #c62828;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-note {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #059669;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transform: rotate(-1deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-note:nth-child(even) {
+            transform: rotate(1deg);
+            background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+            border-color: #0d9488;
+        }
+
+        .stat-note:nth-child(3) {
+            background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+            border-color: #06b6d4;
+        }
+
+        .stat-note:nth-child(4) {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-color: #3b82f6;
+        }
+
+        .stat-note:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+
+        .stat-note:nth-child(even) .stat-number {
+            color: #0d9488;
+        }
+
+        .stat-note:nth-child(3) .stat-number {
+            color: #0891b2;
+        }
+
+        .stat-note:nth-child(4) .stat-number {
+            color: #2563eb;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .challenge-section {
+            margin: 40px 0;
+        }
+
+        .challenge-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #059669;
+        }
+
+        .challenge-card:nth-child(even) {
+            border-left-color: #0d9488;
+        }
+
+        .challenge-card:nth-child(3) {
+            border-left-color: #06b6d4;
+        }
+
+        .challenge-card:nth-child(4) {
+            border-left-color: #3b82f6;
+        }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .challenge-number {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .challenge-card:nth-child(even) .challenge-number {
+            background: linear-gradient(135deg, #0d9488, #0f766e);
+        }
+
+        .challenge-card:nth-child(3) .challenge-number {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+
+        .challenge-card:nth-child(4) .challenge-number {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .challenge-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c2c2c;
+        }
+
+        .challenge-subtitle {
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .challenge-content {
+            color: #444;
+            line-height: 1.8;
+        }
+
+        .challenge-content strong {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .image-section {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .image-caption {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+            padding: 0 20px;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #d97706;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .warning-box::before {
+            content: '🔍';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            font-size: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .warning-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+
+        .warning-content {
+            color: #78350f;
+            line-height: 1.8;
+        }
+
+        .insight-box {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 2px solid #059669;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .insight-box::before {
+            content: '💡';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            font-size: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .insight-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #047857;
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+
+        .insight-content {
+            color: #065f46;
+            line-height: 1.8;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-content {
+                padding: 30px 25px;
+            }
+
+            .title {
+                font-size: 36px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .note-card {
+                padding: 20px;
+                transform: rotate(0deg);
+            }
+
+            .note-card:hover {
+                transform: scale(1.02);
+            }
+
+            .comparison-table {
+                font-size: 12px;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 8px 10px;
+            }
+        }
+
+        .section-title {
+            text-align: center;
+            margin: 50px 0 30px;
+            color: #2c2c2c;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            margin: -20px 0 30px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .flow-diagram {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #334155;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-card">
+        <div class="card-content">
+            <!-- Header -->
+            <div class="header-section">
+                <h1 class="title">PaddleOCR-VL</h1>
+                <p class="subtitle">Coarse-to-Fine Visual Processing — 粗到细文档解析新范式</p>
+                <p class="description">
+                    文档解析领域的效率革命。PaddleOCR-VL 提出了一种<span class="highlight">粗到细（Coarse-to-Fine）</span>的两阶段框架，
+                    核心观察是：<span class="highlight-good">文档图像中存在大量视觉冗余区域</span>——PPT 中有效区域仅占约 39%，
+                    即便是信息密集的报纸也只占约 60%。通过先定位有效区域再精细识别的策略，
+                    仅用 <span class="highlight-blue">0.9B 参数</span>和 <span class="highlight-blue">2485 视觉 tokens</span>，
+                    就超越了所有 72B 级别的通用 VLM 和专用模型，
+                    在 OmniDocBench v1.5 上取得了 <span class="highlight-good">92.62 的综合得分</span>。
+                </p>
+            </div>
+
+            <!-- Key Stats -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">0.9B</div>
+                    <div class="stat-label">参数量</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">92.62</div>
+                    <div class="stat-label">OmniDocBench v1.5 综合得分</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">2485</div>
+                    <div class="stat-label">视觉 Tokens（最少）</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">109</div>
+                    <div class="stat-label">支持语言数</div>
+                </div>
+            </div>
+
+            <!-- Figure 1 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Figure 1. PaddleOCR-VL achieves state-of-the-art performance with the fewest vision tokens and parameters on OmniDocBench v1.5.png"
+                        alt="PaddleOCR-VL 在 OmniDocBench v1.5 上取得 SOTA">
+                </div>
+                <div class="image-caption">
+                    Figure 1. PaddleOCR-VL 以最少的视觉 tokens 和参数在 OmniDocBench v1.5 上取得 SOTA 性能
+                </div>
+            </div>
+
+            <!-- Background & Motivation -->
+            <h2 class="section-title">🔬 研究背景与动机</h2>
+            <p class="section-subtitle">为什么需要粗到细的文档解析？</p>
+
+            <div class="insight-box">
+                <div class="insight-title">核心观察：文档图像中的视觉冗余</div>
+                <div class="insight-content">
+                    文档解析是一项细粒度任务，图像分辨率对性能有重大影响。高分辨率输入虽能提升精度，
+                    但会导致视觉 token 数量<strong>呈二次方增长</strong>，计算成本大幅上升。<br><br>
+                    关键洞察：文档图像中有效视觉区域<strong>平均不到 50%</strong>。PPT 文档中仅约 39%，
+                    报纸约 60%。直接处理整张大图是极其低效的。
+                </div>
+            </div>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">现有方法的三大困境</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>方法类别</th>
+                                <th>代表工作</th>
+                                <th>主要问题</th>
+                            </tr>
+                            <tr>
+                                <td><strong>管线式（Pipeline）</strong></td>
+                                <td>Marker, MinerU</td>
+                                <td class="warn-result">误差传播，复杂逻辑处理困难</td>
+                            </tr>
+                            <tr>
+                                <td><strong>通用 VLM</strong></td>
+                                <td>GPT-4o, Qwen2.5-VL, Gemini</td>
+                                <td class="warn-result">幻觉、识别错误、阅读顺序混乱、计算开销大</td>
+                            </tr>
+                            <tr>
+                                <td><strong>专用 VLM</strong></td>
+                                <td>Dolphin, dots.ocr, MinerU2.5</td>
+                                <td class="warn-result">坐标漂移、长文档效率瓶颈、统一压缩损害精度</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Figure 2 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Figure 2. Architectural comparison of End-to-end VLM and our method.png"
+                        alt="架构对比">
+                </div>
+                <div class="image-caption">
+                    Figure 2. 端到端 VLM 与 PaddleOCR-VL 的架构对比：各类文档中有效区域平均不到 50%，
+                    通过丢弃冗余区域实现效率提升
+                </div>
+            </div>
+
+            <!-- Method -->
+            <h2 class="section-title">🏗️ 方法：粗到细两阶段架构</h2>
+            <p class="section-subtitle">将计算资源集中到语义相关区域，抑制冗余区域</p>
+
+            <!-- Figure 3 -->
+            <div class="image-section">
+                <div class="image-container">
+                    <img src="assets/images/Figure 3. The overview of our proposed PaddleOCR-VL, which consists of two components.png"
+                        alt="PaddleOCR-VL 架构总览">
+                </div>
+                <div class="image-caption">
+                    Figure 3. PaddleOCR-VL 总体架构：VRFM 提取有效区域并预测阅读顺序 → PaddleOCR-VL-0.9B 精细识别 → 结构化输出
+                </div>
+            </div>
+
+            <div class="challenge-section">
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">1</div>
+                        <div>
+                            <div class="challenge-title">第一阶段：有效区域聚焦模块（VRFM）</div>
+                            <div class="challenge-subtitle">Valid Region Focus Module — 轻量级布局分析</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>VRFM 的两大核心任务：</strong><br><br>
+                        <span class="highlight">区域检测</span>：基于 RT-DETR 架构，定位并分类文档中的语义区域（文本、表格、公式、图表等）<br><br>
+                        <span class="highlight">阅读顺序预测</span>：集成指针网络（Pointer Network），利用 Relation-DETR 的几何偏置捕获空间关系，
+                        计算 N×N 的成对排序分数矩阵，通过"胜场累积"（win-accumulation）解码算法生成一致的阅读顺序<br><br>
+                        <strong>训练策略：</strong><br>
+                        • 先训练 RT-DETR 核心进行布局检测（100 epochs，PP-DocLayout Plus-L 权重初始化）<br>
+                        • 再冻结核心只训练指针网络（200 epochs，Generalized Cross Entropy Loss + AdamW）
+                    </div>
+                    <div class="image-section">
+                        <div class="image-container">
+                            <img src="assets/images/Figure 4. Architecture of the Valid Region Focus Module (VRFM)..png"
+                                alt="VRFM 架构">
+                        </div>
+                        <div class="image-caption">
+                            Figure 4. VRFM 架构：RT-DETR 检测布局元素 + 指针网络预测阅读顺序
+                        </div>
+                    </div>
+                </div>
+
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">2</div>
+                        <div>
+                            <div class="challenge-title">第二阶段：元素识别（PaddleOCR-VL-0.9B）</div>
+                            <div class="challenge-subtitle">紧凑而强大的 0.9B 视觉语言模型</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>架构三大组件：</strong><br><br>
+                        <span class="highlight">视觉编码器</span>：NaViT 风格，初始化自 Keye-VL，支持原生动态分辨率处理——避免图像缩放造成的失真和幻觉<br><br>
+                        <span class="highlight">投影器</span>：2 层 MLP + GELU 激活，高效桥接视觉和语言模态<br><br>
+                        <span class="highlight">语言模型</span>：ERNIE-4.5-0.3B，增强 3D-RoPE 位置表示<br><br>
+                        <span class="highlight-good">关键优势</span>：NaViT 风格的原生动态分辨率处理，直接在原始分辨率上处理图像，
+                        避免了传统固定分辨率或 tiling 方法带来的信息损失，
+                        在文本密集型任务上表现尤为出色。
+                    </div>
+                </div>
+
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">3</div>
+                        <div>
+                            <div class="challenge-title">大规模数据集建设</div>
+                            <div class="challenge-subtitle">超过 3000 万样本的系统化数据管线</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <strong>四大数据来源：</strong><br>
+                        • <span class="highlight-blue">开源数据集</span>：CASIA-HWDB、UniMER-1M、MathWriting、ChartQA 等<br>
+                        • <span class="highlight-blue">合成数据</span>：XeLaTeX 和浏览器渲染工具针对数据不平衡问题生成<br>
+                        • <span class="highlight-blue">网络爬取</span>：学术论文、报纸、手写扫描件等<br>
+                        • <span class="highlight-blue">内部数据集</span>：多年 OCR 研究积累<br><br>
+                        <strong>自动标注管线：</strong><br>
+                        PP-StructureV3 生成伪标签 → ERNIE-4.5-VL / Qwen2.5VL 精修 → 幻觉过滤<br><br>
+                        <strong>困难样本挖掘：</strong><br>
+                        构建细粒度评估集 → 识别模型弱点 → 利用渲染工具针对性合成高质量数据
+                    </div>
+                </div>
+
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <div class="challenge-number">4</div>
+                        <div>
+                            <div class="challenge-title">两阶段训练流程</div>
+                            <div class="challenge-subtitle">从预训练对齐到指令微调</div>
+                        </div>
+                    </div>
+                    <div class="challenge-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>配置项</th>
+                                <th>Stage 1: 预训练对齐</th>
+                                <th>Stage 2: 指令微调</th>
+                            </tr>
+                            <tr>
+                                <td><strong>样本量</strong></td>
+                                <td>29M</td>
+                                <td>2.7M</td>
+                            </tr>
+                            <tr>
+                                <td><strong>最大分辨率</strong></td>
+                                <td>1280×28×28</td>
+                                <td>2048×28×28</td>
+                            </tr>
+                            <tr>
+                                <td><strong>序列长度</strong></td>
+                                <td>16384</td>
+                                <td>16384</td>
+                            </tr>
+                            <tr>
+                                <td><strong>学习率</strong></td>
+                                <td>5×10⁻⁵ → 5×10⁻⁶</td>
+                                <td>5×10⁻⁶ → 5×10⁻⁷</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Epoch</strong></td>
+                                <td>1</td>
+                                <td>2</td>
+                            </tr>
+                        </table>
+                        <br>
+                        <strong>微调任务：</strong>OCR 文本识别 | 表格解析（OTSL 格式）| 公式转 LaTeX | 图表数据提取
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page-level Results -->
+            <h2 class="section-title">📊 页面级评估结果</h2>
+            <p class="section-subtitle">OmniDocBench v1.5 — 全面超越所有竞品</p>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">OmniDocBench v1.5 综合排名</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>模型</th>
+                                <th>类型</th>
+                                <th>参数量</th>
+                                <th>视觉 Tokens</th>
+                                <th>Overall↑</th>
+                                <th>Text Edit↓</th>
+                                <th>Formula CDM↑</th>
+                                <th>Table TEDS↑</th>
+                            </tr>
+                            <tr>
+                                <td>GPT-4o</td>
+                                <td>通用 VLM</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>75.02</td>
+                                <td>0.217</td>
+                                <td>79.70</td>
+                                <td>67.07</td>
+                            </tr>
+                            <tr>
+                                <td>Qwen2.5-VL-72B</td>
+                                <td>通用 VLM</td>
+                                <td>72B</td>
+                                <td>5626</td>
+                                <td>87.02</td>
+                                <td>0.094</td>
+                                <td>88.27</td>
+                                <td>82.15</td>
+                            </tr>
+                            <tr>
+                                <td>Gemini-2.5 Pro</td>
+                                <td>通用 VLM</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>88.03</td>
+                                <td>0.075</td>
+                                <td>85.82</td>
+                                <td>85.71</td>
+                            </tr>
+                            <tr>
+                                <td>dots.ocr</td>
+                                <td>专用 VLM</td>
+                                <td>3B</td>
+                                <td>5513</td>
+                                <td>88.41</td>
+                                <td>0.048</td>
+                                <td>83.22</td>
+                                <td>86.78</td>
+                            </tr>
+                            <tr>
+                                <td>MinerU2.5</td>
+                                <td>专用 VLM</td>
+                                <td>1.2B</td>
+                                <td>3256</td>
+                                <td>90.67</td>
+                                <td>0.047</td>
+                                <td>88.46</td>
+                                <td>88.22</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PaddleOCR-VL-S</strong></td>
+                                <td>专用 VLM</td>
+                                <td class="best-result">0.9B</td>
+                                <td class="best-result">1829</td>
+                                <td class="best-result">91.55</td>
+                                <td class="best-result">0.035</td>
+                                <td class="best-result">90.30</td>
+                                <td>87.89</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PaddleOCR-VL-M</strong></td>
+                                <td>专用 VLM</td>
+                                <td class="best-result">0.9B</td>
+                                <td>2259</td>
+                                <td class="best-result">92.17</td>
+                                <td class="best-result">0.035</td>
+                                <td>90.22</td>
+                                <td>89.75</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PaddleOCR-VL-L</strong></td>
+                                <td>专用 VLM</td>
+                                <td class="best-result">0.9B</td>
+                                <td>2485</td>
+                                <td class="best-result">92.62</td>
+                                <td class="best-result">0.035</td>
+                                <td class="best-result">90.90</td>
+                                <td class="best-result">90.48</td>
+                            </tr>
+                        </table>
+                        <br>
+                        <span class="highlight-good">关键亮点</span>：<br>
+                        • 仅 <strong>0.9B 参数</strong>和 <strong>2485 视觉 tokens</strong>，综合得分 <strong>92.62</strong>，超越所有 72B 级别通用 VLM 和专用模型<br>
+                        • 文本识别编辑距离最低（<strong>0.035</strong>），公式 CDM 最高（<strong>90.90</strong>），表格 TEDS 最高（<strong>90.48</strong>）<br>
+                        • 阅读顺序编辑距离最低（<strong>0.043</strong>）<br>
+                        • S/M/L 三个配置使用同一模型权重，仅视觉 token 数量不同
+                    </div>
+                </div>
+            </div>
+
+            <!-- Element-level Results -->
+            <h2 class="section-title">🎯 元素级评估结果</h2>
+            <p class="section-subtitle">文本、表格、公式、图表——全面领先</p>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">文本识别：几乎所有文档类型中最低错误率</div>
+                    <div class="note-content">
+                        在 OmniDocBench-OCR-block（17,148 个文本块）上的评估：<br><br>
+                        <table class="comparison-table">
+                            <tr>
+                                <th>模型</th>
+                                <th>PPT</th>
+                                <th>学术文献</th>
+                                <th>书籍</th>
+                                <th>彩色教材</th>
+                                <th>试卷</th>
+                                <th>杂志</th>
+                                <th>报纸</th>
+                                <th>笔记</th>
+                                <th>研究报告</th>
+                            </tr>
+                            <tr>
+                                <td>Qwen2.5-VL-72B</td>
+                                <td>0.054</td>
+                                <td>0.023</td>
+                                <td>0.061</td>
+                                <td>0.084</td>
+                                <td>0.195</td>
+                                <td>0.032</td>
+                                <td>0.056</td>
+                                <td>0.118</td>
+                                <td>0.040</td>
+                            </tr>
+                            <tr>
+                                <td>MinerU2.5</td>
+                                <td>0.195</td>
+                                <td>0.089</td>
+                                <td>0.111</td>
+                                <td>0.234</td>
+                                <td>0.194</td>
+                                <td>0.147</td>
+                                <td>0.056</td>
+                                <td>0.142</td>
+                                <td>0.094</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PaddleOCR-VL-L</strong></td>
+                                <td class="best-result">0.049</td>
+                                <td class="best-result">0.021</td>
+                                <td class="best-result">0.047</td>
+                                <td class="best-result">0.082</td>
+                                <td class="best-result">0.115</td>
+                                <td class="best-result">0.020</td>
+                                <td class="best-result">0.035</td>
+                                <td class="best-result">0.077</td>
+                                <td class="best-result">0.031</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">表格识别：Overall TEDS 0.9046</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>模型</th>
+                                <th>Overall TEDS↑</th>
+                                <th>Structural TEDS↑</th>
+                                <th>Overall Edit Dist↓</th>
+                            </tr>
+                            <tr>
+                                <td>dots.ocr</td>
+                                <td>0.8194</td>
+                                <td>0.8442</td>
+                                <td>0.1508</td>
+                            </tr>
+                            <tr>
+                                <td>MinerU2.5</td>
+                                <td>0.9005</td>
+                                <td>0.9539</td>
+                                <td>0.0693</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PaddleOCR-VL-L</strong></td>
+                                <td class="best-result">0.9046</td>
+                                <td>0.9420</td>
+                                <td class="best-result">0.0681</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">公式识别：CDM 0.9404（SOTA）</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>模型</th>
+                                <th>Overall CDM↑</th>
+                                <th>EN CDM↑</th>
+                                <th>ZH CDM↑</th>
+                            </tr>
+                            <tr>
+                                <td>Qwen2.5-VL-72B</td>
+                                <td>0.8747</td>
+                                <td>0.9574</td>
+                                <td>0.7920</td>
+                            </tr>
+                            <tr>
+                                <td>MinerU2.5</td>
+                                <td>0.9187</td>
+                                <td>0.9751</td>
+                                <td>0.8623</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PaddleOCR-VL-L</strong></td>
+                                <td class="best-result">0.9404</td>
+                                <td class="best-result">0.9773</td>
+                                <td class="best-result">0.9035</td>
+                            </tr>
+                        </table>
+                        <br>
+                        <span class="highlight-good">中文公式 CDM 达 0.9035</span>，较 MinerU2.5 提升 4.12 个百分点，展现强大的中文公式识别能力。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">图表识别：RMS-F1 0.8440，超越 72B 模型</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>模型</th>
+                                <th>Overall RMS-F1↑</th>
+                                <th>EN</th>
+                                <th>ZH</th>
+                            </tr>
+                            <tr>
+                                <td>Qwen2.5-VL-72B</td>
+                                <td>0.7300</td>
+                                <td>0.6972</td>
+                                <td>0.7464</td>
+                            </tr>
+                            <tr>
+                                <td>PP-StructureV3</td>
+                                <td>0.8060</td>
+                                <td>0.7963</td>
+                                <td>0.8109</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PaddleOCR-VL-L</strong></td>
+                                <td class="best-result">0.8440</td>
+                                <td class="best-result">0.8222</td>
+                                <td class="best-result">0.8549</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inference Performance -->
+            <h2 class="section-title">⚡ 推理性能</h2>
+            <p class="section-subtitle">单张 NVIDIA A100 GPU 上的端到端推理对比</p>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">推理速度与显存对比</div>
+                    <div class="note-content">
+                        <table class="comparison-table">
+                            <tr>
+                                <th>模型</th>
+                                <th>总时间 (s)↓</th>
+                                <th>页/秒↑</th>
+                                <th>Tokens/秒↑</th>
+                                <th>显存 (GB)↓</th>
+                            </tr>
+                            <tr>
+                                <td>dots.ocr</td>
+                                <td>2784.6</td>
+                                <td>0.35</td>
+                                <td>532.9</td>
+                                <td>78.5</td>
+                            </tr>
+                            <tr>
+                                <td>MonkeyOCR-pro-1.2B</td>
+                                <td>1456.4</td>
+                                <td>0.67</td>
+                                <td>1120.3</td>
+                                <td>75.5</td>
+                            </tr>
+                            <tr>
+                                <td>MinerU2.5</td>
+                                <td>927.3</td>
+                                <td>1.06</td>
+                                <td>1647.9</td>
+                                <td>41.9</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PaddleOCR-VL-L</strong></td>
+                                <td class="best-result">605.2</td>
+                                <td class="best-result">1.62</td>
+                                <td class="best-result">2470.7</td>
+                                <td>42.1</td>
+                            </tr>
+                        </table>
+                        <br>
+                        <span class="highlight-good">效率优势</span>：<br>
+                        • 比 MinerU2.5 快 <strong>53%</strong>（页吞吐量 1.62 vs 1.06）<br>
+                        • Token 吞吐量高 <strong>50%</strong>（2470.7 vs 1647.9）<br>
+                        • 显存使用相当（42.1 GB vs 41.9 GB）<br>
+                        • 比 dots.ocr 快 <strong>4.6 倍</strong>，显存节省约 <strong>46%</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-note">
+                    <div class="stat-number">53%</div>
+                    <div class="stat-label">比 MinerU2.5 吞吐量提升</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">4.6x</div>
+                    <div class="stat-label">比 dots.ocr 速度提升</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">42.1 GB</div>
+                    <div class="stat-label">显存占用（A100）</div>
+                </div>
+                <div class="stat-note">
+                    <div class="stat-number">30M+</div>
+                    <div class="stat-label">训练样本数量</div>
+                </div>
+            </div>
+
+            <!-- Core Contributions -->
+            <h2 class="section-title">🌟 核心贡献总结</h2>
+
+            <div class="note-section">
+                <div class="note-card">
+                    <div class="note-title">1. 粗到细的文档解析范式</div>
+                    <div class="note-content">
+                        通过 VRFM 先定位有效区域再精细识别，实现了<span class="highlight-good">高分辨率精度与计算效率的平衡</span>。
+                        这一范式的核心洞察——文档图像中的视觉冗余——为文档解析开辟了全新的优化方向。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">2. 解耦两阶段架构</div>
+                    <div class="note-content">
+                        VRFM（轻量布局分析 + 阅读顺序预测）+ PaddleOCR-VL-0.9B（精细元素识别），
+                        各阶段<span class="highlight">独立优化</span>。这种层次化设计让每个模块都能专注于自己最擅长的任务，
+                        避免了端到端模型中常见的多任务冲突问题。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">3. 全面 SOTA 性能</div>
+                    <div class="note-content">
+                        在多个公开和内部基准测试上全面领先：文本、公式、表格、图表识别均达到最优。
+                        支持 <span class="highlight-good">109 种语言</span>，在手写体和历史文档等困难场景下表现稳健。
+                    </div>
+                </div>
+
+                <div class="note-card">
+                    <div class="note-title">4. 极致效率</div>
+                    <div class="note-content">
+                        <span class="highlight-good">0.9B 参数量</span> — 最少视觉 tokens — 最快推理速度 — 最低显存占用。
+                        证明了在文档解析领域，精巧的架构设计可以战胜暴力堆参数的方法。
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Technical Insights -->
+            <h2 class="section-title">🔑 关键技术洞察</h2>
+
+            <div class="warning-box">
+                <div class="warning-title">核心技术要点</div>
+                <div class="warning-content">
+                    <strong>1. 视觉信息分布的不均匀性</strong><br>
+                    利用文档图像中有效区域平均不到 50% 的特性，通过丢弃冗余区域实现效率提升。
+                    这是一个简单但极其有效的洞察。<br><br>
+                    <strong>2. NaViT 风格的原生动态分辨率</strong><br>
+                    避免图像缩放造成的信息损失，直接在原始分辨率上处理，
+                    对小字体、密集文本等场景尤为关键。<br><br>
+                    <strong>3. 指针网络 + 几何偏置的阅读顺序预测</strong><br>
+                    将阅读顺序建模为成对排序问题，通过 N×N 矩阵和胜场累积解码，
+                    优雅地处理了复杂布局中的阅读顺序问题。<br><br>
+                    <strong>4. 系统化的数据管线</strong><br>
+                    多源数据采集 → 自动标注（伪标签 + 大模型精修 + 幻觉过滤）→ 困难样本挖掘与合成。
+                    数据质量是模型性能的核心因素之一。
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="insight-box">
+                <div class="insight-title">总结</div>
+                <div class="insight-content">
+                    PaddleOCR-VL 以一种优雅的方式解决了文档解析中的效率与精度矛盾。其核心思想——
+                    <strong>文档图像中的视觉信息是稀疏分布的，应该将计算资源集中在真正有用的区域</strong>——
+                    看似朴素，却带来了全面的性能飞跃。<br><br>
+                    仅 0.9B 参数的模型超越了 72B 级别的通用 VLM，这有力地证明了：
+                    <span class="highlight-good">在垂直领域，精巧的架构设计 + 高质量的数据 + 正确的归纳偏置，
+                    远比简单堆砌参数更加高效</span>。
+                    这一思路对整个 VLM 领域都有重要的启示意义。
+                </div>
+            </div>
+
+
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                <p style="color: #666; font-size: 14px;">
+                    PaddleOCR-VL: Boosting Document Parsing Efficiency and Performance with Coarse-to-Fine Visual Processing
+                </p>
+            </div>
+
+            <!-- Logo -->
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px;">
+                <a href="https://llm-arena.kcores.com" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; text-decoration: none;">
+                    <img src="assets/images/kcores-llm-arena-logo-black.png" alt="Kcores LLM Arena Logo"
+                        style="max-height: 60px; opacity: 0.8; transition: all 0.3s ease; cursor: pointer;">
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const noteCards = document.querySelectorAll('.note-card, .stat-note');
+
+            noteCards.forEach((card, index) => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'rotate(0deg) scale(1.02)';
+                    this.style.zIndex = '10';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    const isEven = Array.from(card.parentElement.children).indexOf(card) % 2 === 1;
+                    const is3n = (Array.from(card.parentElement.children).indexOf(card) + 1) % 3 === 0;
+                    if (is3n) {
+                        this.style.transform = 'rotate(-0.3deg)';
+                    } else if (isEven) {
+                        this.style.transform = 'rotate(0.5deg)';
+                    } else {
+                        this.style.transform = 'rotate(-0.5deg)';
+                    }
+                    this.style.zIndex = '1';
+                });
+            });
+
+            document.querySelectorAll('img').forEach(img => {
+                img.addEventListener('load', function () {
+                    this.style.opacity = '1';
+                });
+                img.style.opacity = '0';
+                img.style.transition = 'opacity 0.3s ease';
+            });
+
+            const logoLink = document.querySelector('a[href="https://llm-arena.kcores.com"]');
+            const logo = document.querySelector('img[alt="Kcores LLM Arena Logo"]');
+            if (logoLink && logo) {
+                logoLink.addEventListener('mouseenter', function () {
+                    logo.style.opacity = '1';
+                    logo.style.transform = 'scale(1.05)';
+                });
+
+                logoLink.addEventListener('mouseleave', function () {
+                    logo.style.opacity = '0.8';
+                    logo.style.transform = 'scale(1)';
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
